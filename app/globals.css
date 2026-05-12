@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Material Symbols Outlined — used for inline iconography throughout the site.
+  Loaded via Google Fonts. Kept separate from Next.js font loading because it's an
+  icon font, not a text font.
+*/
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+/*
+  Modern Bureau — design tokens
+  Captured from the Stitch-generated "Civic AI Corps" design system.
+  See docs/visual-direction/stitch-exports/design-system.md for the full spec.
+
+  To switch accent palette (ochre → rust → umber), override the tokens under --color-primary*
+  in a themed root class. Default is ochre.
+*/
+
+@layer base {
+  :root {
+    /* Surfaces — warm bone hierarchy */
+    --color-background: #fff9ee;
+    --color-surface: #fff9ee;
+    --color-surface-bright: #fff9ee;
+    --color-surface-dim: #dfd9cf;
+    --color-surface-variant: #e8e2d7;
+    --color-surface-container: #f3ede2;
+    --color-surface-container-low: #f9f3e8;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-high: #ede8dd;
+    --color-surface-container-highest: #e8e2d7;
+    --color-surface-tint: #7e5700;
+
+    /* Content on surfaces */
+    --color-on-background: #1d1c15;
+    --color-on-surface: #1d1c15;
+    --color-on-surface-variant: #4f4537;
+
+    /* Primary — Ochre */
+    --color-primary: #7e5700;
+    --color-primary-container: #c2913b;
+    --color-primary-fixed: #ffdead;
+    --color-primary-fixed-dim: #f4bd63;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #442d00;
+
+    /* Secondary — Rust */
+    --color-secondary: #9b4334;
+    --color-secondary-container: #fd907b;
+    --color-secondary-fixed: #ffdad4;
+    --color-secondary-fixed-dim: #ffb4a6;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-container: #75271a;
+
+    /* Tertiary — Umber / Aged Wood */
+    --color-tertiary: #775840;
+    --color-tertiary-container: #b79277;
+    --color-tertiary-fixed: #ffdcc4;
+    --color-tertiary-fixed-dim: #e7bfa1;
+    --color-on-tertiary: #ffffff;
+    --color-on-tertiary-container: #452c17;
+
+    /* Outline + error */
+    --color-outline: #817565;
+    --color-outline-variant: #d3c4b2;
+    --color-error: #ba1a1a;
+    --color-error-container: #ffdad6;
+    --color-on-error: #ffffff;
+    --color-on-error-container: #93000a;
+
+    /* Inverse (rarely used — dark surfaces) */
+    --color-inverse-surface: #333029;
+    --color-inverse-on-surface: #f6f0e5;
+    --color-inverse-primary: #f4bd63;
+  }
+
+  html {
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+  }
+
+  body {
+    @apply font-body antialiased bg-surface text-on-surface;
+  }
+
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  /* Keyboard focus outlines — visible only to keyboard users, not mouse clicks */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Skip-to-content link — hidden until focused */
+  .skip-to-main {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+  }
+  .skip-to-main:focus {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 200;
+    background-color: var(--color-primary);
+    color: var(--color-on-primary);
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-inter), sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Modern Bureau enforcement: 0px radius everywhere unless overridden */
+  button, input, select, textarea, a[role="button"] {
+    border-radius: 0;
+  }
+
+  /* Material Symbols sizing defaults */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer utilities {
+  /* Small-type annotation used throughout (technical notes, section labels) */
+  .annotation {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-on-surface-variant);
+  }
+}

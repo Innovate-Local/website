@@ -1,0 +1,22 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# Env files
+.env
+.env*.local
+
+# OS / editor
+.DS_Store
+*.pyc
+*.pyo
+
+# Template sync metadata
+.template-sync
+.template-sync-commit
+
+# Claude local settings
+.claude/settings.local.json
