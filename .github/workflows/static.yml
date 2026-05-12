@@ -32,6 +32,11 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Remove this line when DNS for innovatelocal.ai is pointing at Pages.
+          # Until then, the site previews at radsquared.github.io/innovatelocal.ai/
+          # which is a subpath, so all asset URLs need this prefix.
+          NEXT_PUBLIC_BASE_PATH: /innovatelocal.ai
 
       - name: Setup Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0

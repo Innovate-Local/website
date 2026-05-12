@@ -9,12 +9,13 @@ import {
   type MotionValue,
 } from 'motion/react'
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
 const CLIPS = [
-  '/videos/clip_2.mp4',
-  '/videos/clip_1.mp4',
-  '/videos/clip_3.mp4',
-  '/videos/clip_4.mp4',
-  '/videos/clip_5.mp4',
+  `${BASE}/videos/clip_2.mp4`,
+  `${BASE}/videos/clip_1.mp4`,
+  `${BASE}/videos/clip_3.mp4`,
+  `${BASE}/videos/clip_4.mp4`,
+  `${BASE}/videos/clip_5.mp4`,
 ]
 
 export function IntroWordmark() {
