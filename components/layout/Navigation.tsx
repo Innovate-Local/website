@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+// Section anchors on the home page. We construct the href manually so the
+// path keeps its trailing slash before the fragment — Next.js's <Link>
+// strips it when basePath is set, which on a trailingSlash:true site makes
+// the browser do a full navigation instead of a same-page scroll, and the
+// canonical-form redirect drops the fragment along the way.
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+const homeAnchor = (id: string) => `${BASE_PATH}/#${id}`
+
 export function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -40,24 +48,24 @@ export function Navigation() {
           </Link>
 
           <nav className="hidden md:flex gap-12 items-center" aria-label="Primary">
-            <Link
-              href="/#the-model"
+            <a
+              href={homeAnchor('the-model')}
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               the model
-            </Link>
-            <Link
-              href="/#the-four-ds"
+            </a>
+            <a
+              href={homeAnchor('the-four-ds')}
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               principles
-            </Link>
-            <Link
-              href="/#non-profit"
+            </a>
+            <a
+              href={homeAnchor('non-profit')}
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               structure
-            </Link>
+            </a>
           </nav>
 
           <div className="hidden md:flex gap-3 items-center">
@@ -114,27 +122,27 @@ export function Navigation() {
           </div>
 
           <nav className="flex flex-col p-8 gap-1" aria-label="Primary">
-            <Link
-              href="/#the-model"
+            <a
+              href={homeAnchor('the-model')}
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               the model
-            </Link>
-            <Link
-              href="/#the-four-ds"
+            </a>
+            <a
+              href={homeAnchor('the-four-ds')}
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               principles
-            </Link>
-            <Link
-              href="/#non-profit"
+            </a>
+            <a
+              href={homeAnchor('non-profit')}
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               structure
-            </Link>
+            </a>
           </nav>
 
           <div className="px-8 pb-12 flex flex-col gap-3">
