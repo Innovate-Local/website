@@ -1,11 +1,4 @@
-/**
- * Form submission for /join, /start, /partner.
- *
- * Stubbed for the initial Pages migration — accepts the form, validates, and
- * returns a success reference without persisting anywhere. The real backend
- * (Supabase, browser-side insert under RLS) is the next item on the launch
- * readiness list. See docs/launch-readiness.md → "Form rewire".
- */
+import { getSupabaseClient } from '@/lib/supabase'
 
 export type InquiryType = 'join' | 'start' | 'partner'
 
@@ -29,14 +22,31 @@ export async function submitInquiry(
     return { ok: false, error: 'Please provide a valid email address.' }
   }
 
+  const payload: Record<string, string> = { type }
+  for (const [field, value] of formData.entries()) {
+    if (typeof value === 'string') payload[field] = value
+  }
+
   const reference = `IL-${Date.now().toString(36).toUpperCase()}`
 
-  if (typeof window !== 'undefined') {
-    const payload: Record<string, string> = { type }
-    for (const [key, value] of formData.entries()) {
-      if (typeof value === 'string') payload[key] = value
-    }
-    console.log('[submitInquiry]', { reference, ...payload })
+  const supabase = getSupabaseClient()
+  if (!supabase) {
+    console.warn('[submitInquiry] Supabase not configured — submission not persisted', {
+      reference,
+      ...payload,
+    })
+    return { ok: true, reference }
+  }
+
+  const { error } = await supabase.from('inquiries').insert({
+    type,
+    payload,
+    reference,
+  })
+
+  if (error) {
+    console.error('[submitInquiry] Supabase insert failed', error)
+    return { ok: false, error: 'Something went wrong on our end. Please try again.' }
   }
 
   return { ok: true, reference }
