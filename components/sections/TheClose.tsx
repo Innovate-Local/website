@@ -12,28 +12,26 @@ export function TheClose() {
           The businesses are waiting.
         </h2>
 
-        <p className="font-body text-2xl text-primary mb-16 italic">
+        <p className="font-body text-2xl text-primary mb-8 italic">
           This is about building. Not waiting.
+        </p>
+
+        <p className="font-headline text-3xl md:text-4xl text-on-surface mb-16 tracking-tight">
+          What&rsquo;s in it for you?
         </p>
 
         <div className="flex flex-col md:flex-row justify-center gap-6">
           <Link
-            href="/join"
+            href="/students"
             className="bg-secondary text-on-secondary border border-secondary px-8 py-5 font-label text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
           >
-            Join a hub
+            Students
           </Link>
           <Link
-            href="/start"
+            href="/businesses"
             className="bg-secondary text-on-secondary border border-secondary px-8 py-5 font-label text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
           >
-            Start a hub
-          </Link>
-          <Link
-            href="/partner"
-            className="bg-secondary text-on-secondary border border-secondary px-8 py-5 font-label text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
-          >
-            Partner with us
+            Businesses
           </Link>
         </div>
       </div>

@@ -5,7 +5,6 @@ import {
   motion,
   useScroll,
   useTransform,
-  useMotionTemplate,
   type MotionValue,
 } from 'motion/react'
 
@@ -128,14 +127,8 @@ function VideoBackground({ progress }: { progress: MotionValue<number> }) {
 }
 
 function WordmarkWithRipple({ progress }: { progress: MotionValue<number> }) {
-  const wipeLeft = useTransform(progress, [0, 0.85], [0, 100])
-  // Ghosts invisible during video phase, rise as cream background fades in, then resolve with the wave
-  const ghostOpacity = useTransform(progress, [0, 0.20, 0.85], [0, 0.85, 0])
   // Text: white on dark video, transitions to charcoal as cream background arrives
   const textColor = useTransform(progress, [0, 0.20], ['#ffffff', '#1d1c15'])
-
-  const topClipPath = useMotionTemplate`polygon(${wipeLeft}% 0, 100% 0, 100% 48%, ${wipeLeft}% 48%)`
-  const bottomClipPath = useMotionTemplate`polygon(${wipeLeft}% 52%, 100% 52%, 100% 100%, ${wipeLeft}% 100%)`
 
   const wordmarkStyle = {
     fontSize: 'clamp(3rem, 14vw, 18rem)',
@@ -146,43 +139,12 @@ function WordmarkWithRipple({ progress }: { progress: MotionValue<number> }) {
 
   return (
     <div className="relative w-full px-4 md:px-8 text-center">
-      <div className="relative inline-block">
-        {/* Top ghost — ochre, offset +4px, top half only */}
-        <motion.span
-          aria-hidden="true"
-          className="absolute inset-0 font-body text-primary lowercase whitespace-nowrap pointer-events-none"
-          style={{
-            ...wordmarkStyle,
-            opacity: ghostOpacity,
-            clipPath: topClipPath,
-            transform: 'translateX(4px)',
-          }}
-        >
-          innovate local
-        </motion.span>
-
-        {/* Bottom ghost — rust, offset −4px, bottom half only */}
-        <motion.span
-          aria-hidden="true"
-          className="absolute inset-0 font-body text-secondary lowercase whitespace-nowrap pointer-events-none"
-          style={{
-            ...wordmarkStyle,
-            opacity: ghostOpacity,
-            clipPath: bottomClipPath,
-            transform: 'translateX(-4px)',
-          }}
-        >
-          innovate local
-        </motion.span>
-
-        {/* Main wordmark — white on video, transitions to charcoal on cream */}
-        <motion.h1
-          className="relative font-headline lowercase whitespace-nowrap"
-          style={{ ...wordmarkStyle, color: textColor }}
-        >
-          innovate local
-        </motion.h1>
-      </div>
+      <motion.h1
+        className="font-headline lowercase whitespace-nowrap"
+        style={{ ...wordmarkStyle, color: textColor }}
+      >
+        innovate local
+      </motion.h1>
     </div>
   )
 }

@@ -11,8 +11,8 @@ const hubServices = [
   },
   {
     icon: 'groups',
-    label: 'Talent',
-    body: 'University students doing applied deployment work as part of their education.',
+    label: 'Experience',
+    body: 'University students doing applied deployment work as part of their experiential learning.',
   },
   {
     icon: 'forum',

@@ -3,27 +3,27 @@ import { TiltCard } from '@/components/ui/TiltCard'
 const principles = [
   {
     number: '01',
-    title: 'Democratize.',
+    title: 'Expand.',
     icon: 'groups',
     body: 'Access to capabilities that were previously reserved for large organizations.',
   },
   {
     number: '02',
-    title: 'Dematerialize.',
+    title: 'Simplify.',
     icon: 'cloud_off',
     body: 'No server rooms. No IT departments. No six-month implementation cycles.',
   },
   {
     number: '03',
-    title: 'Demonetize.',
+    title: 'Reduce.',
     icon: 'savings',
     body: 'AI tools do in minutes what used to take days of billable hours.',
   },
   {
     number: '04',
-    title: 'Disintermediate.',
+    title: 'Connect.',
     icon: 'hub',
-    body: 'Connect local businesses directly to the intelligence they need. No middlemen.',
+    body: 'Local businesses connected directly to the intelligence they need. No middlemen.',
   },
 ]
 

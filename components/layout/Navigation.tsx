@@ -40,24 +40,24 @@ export function Navigation() {
           </Link>
 
           <nav className="hidden md:flex gap-12 items-center" aria-label="Primary">
-            <a
-              href="#the-model"
+            <Link
+              href="/#the-model"
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               the model
-            </a>
-            <a
-              href="#the-four-ds"
+            </Link>
+            <Link
+              href="/#the-four-ds"
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               principles
-            </a>
-            <a
-              href="#non-profit"
+            </Link>
+            <Link
+              href="/#non-profit"
               className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
             >
               structure
-            </a>
+            </Link>
           </nav>
 
           <div className="hidden md:flex gap-3 items-center">
@@ -114,27 +114,27 @@ export function Navigation() {
           </div>
 
           <nav className="flex flex-col p-8 gap-1" aria-label="Primary">
-            <a
-              href="#the-model"
+            <Link
+              href="/#the-model"
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               the model
-            </a>
-            <a
-              href="#the-four-ds"
+            </Link>
+            <Link
+              href="/#the-four-ds"
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               principles
-            </a>
-            <a
-              href="#non-profit"
+            </Link>
+            <Link
+              href="/#non-profit"
               onClick={close}
               className="font-headline text-5xl lowercase tracking-tight leading-none text-on-surface-variant hover:text-primary py-4"
             >
               structure
-            </a>
+            </Link>
           </nav>
 
           <div className="px-8 pb-12 flex flex-col gap-3">
