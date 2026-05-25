@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-label="innovatelocal favicon monogram">
+  <title>innovatelocal compact favicon monogram</title>
+  <desc>Simplified IL bracketed mark for favicons and very small applications where .ai is illegible.</desc>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;900&amp;display=swap');
+    .bracket {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-weight: 500;
+      font-size: 150px;
+      fill: #7e5700;
+    }
+    .letters {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-weight: 900;
+      font-size: 110px;
+      letter-spacing: 0.02em;
+      fill: #5A3E28;
+    }
+  </style>
+
+  <text x="20"  y="160" class="bracket">[</text>
+  <text x="120" y="150" class="letters" text-anchor="middle">IL</text>
+  <text x="220" y="160" class="bracket" text-anchor="end">]</text>
+</svg>
