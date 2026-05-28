@@ -28,10 +28,10 @@ export function TheClose() {
             Students
           </Link>
           <Link
-            href="/businesses"
+            href="/members"
             className="bg-secondary text-on-secondary border border-secondary px-8 py-5 font-label text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
           >
-            Businesses
+            Members
           </Link>
         </div>
       </div>

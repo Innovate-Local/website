@@ -1,23 +1,41 @@
 import { getSupabaseClient } from '@/lib/supabase'
 
-export type InquiryType = 'join' | 'start' | 'partner'
+export type InquiryType = 'join' | 'start' | 'partner' | 'members'
 
 export type SubmitInquiryResult =
   | { ok: true; reference: string }
   | { ok: false; error: string }
 
+const REQUIRED_FIELDS: Record<InquiryType, string[]> = {
+  join: ['fullName', 'email', 'statement'],
+  start: ['fullName', 'email', 'statement'],
+  partner: ['fullName', 'email', 'statement'],
+  members: [
+    'name',
+    'title',
+    'email',
+    'organization',
+    'location',
+    'industry',
+    'size',
+    'nonprofitDesignation',
+    'challenge',
+  ],
+}
+
 export async function submitInquiry(
   type: InquiryType,
   formData: FormData,
 ): Promise<SubmitInquiryResult> {
-  const fullName = formData.get('fullName')?.toString().trim()
-  const email = formData.get('email')?.toString().trim()
-  const statement = formData.get('statement')?.toString().trim()
-
-  if (!fullName || !email || !statement) {
-    return { ok: false, error: 'Please fill in all required fields.' }
+  const required = REQUIRED_FIELDS[type]
+  for (const field of required) {
+    const value = formData.get(field)?.toString().trim()
+    if (!value) {
+      return { ok: false, error: 'Please fill in all required fields.' }
+    }
   }
 
+  const email = formData.get('email')?.toString().trim() ?? ''
   if (!email.includes('@')) {
     return { ok: false, error: 'Please provide a valid email address.' }
   }

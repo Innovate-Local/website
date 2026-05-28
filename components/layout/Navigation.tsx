@@ -1,7 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
+
+// Use the same SVG file that Next.js serves as the browser-tab favicon, so the
+// nav mark and the tab icon render identically (the SVG embeds its own
+// Google-Fonts @import for Inter, which only fires reliably when loaded as a
+// document — i.e. via <img> — not when inlined).
+function ILMark({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/icon.svg"
+      alt=""
+      width={240}
+      height={220}
+      className={className}
+      priority
+      unoptimized
+    />
+  )
+}
 
 // Section anchors on the home page. We construct the href manually so the
 // path keeps its trailing slash before the fragment — Next.js's <Link>
@@ -42,9 +61,11 @@ export function Navigation() {
         <div className="flex justify-between items-center w-full px-8 py-5 max-w-screen-2xl mx-auto">
           <Link
             href="/"
-            className="font-headline text-2xl font-normal text-on-surface tracking-tight lowercase"
+            className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight lowercase"
+            aria-label="Innovate Local — home"
           >
-            innovate local
+            <ILMark className="h-8 w-auto" />
+            <span>innovate local</span>
           </Link>
 
           <nav className="hidden md:flex gap-12 items-center" aria-label="Primary">
@@ -107,8 +128,9 @@ export function Navigation() {
           aria-label="Site navigation"
         >
           <div className="flex justify-between items-center px-8 py-5 border-b border-surface-container-low">
-            <span className="font-headline text-2xl font-normal text-on-surface tracking-tight lowercase">
-              innovate local
+            <span className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight lowercase">
+              <ILMark className="h-8 w-auto" />
+              <span>innovate local</span>
             </span>
             <button
               onClick={close}
