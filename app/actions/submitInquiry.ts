@@ -23,10 +23,22 @@ const REQUIRED_FIELDS: Record<InquiryType, string[]> = {
   ],
 }
 
+// Hidden form field that real people never see or fill. Bots tend to fill every
+// field, so a non-empty value here marks the submission as automated spam.
+const HONEYPOT_FIELD = 'company_website'
+
 export async function submitInquiry(
   type: InquiryType,
   formData: FormData,
 ): Promise<SubmitInquiryResult> {
+  const reference = `IL-${Date.now().toString(36).toUpperCase()}`
+
+  // Honeypot: if this hidden field has any value, a bot filled it. Accept the
+  // request (so the bot gets no signal that it was caught) but save nothing.
+  if (formData.get(HONEYPOT_FIELD)?.toString().trim()) {
+    return { ok: true, reference }
+  }
+
   const required = REQUIRED_FIELDS[type]
   for (const field of required) {
     const value = formData.get(field)?.toString().trim()
@@ -42,18 +54,18 @@ export async function submitInquiry(
 
   const payload: Record<string, string> = { type }
   for (const [field, value] of formData.entries()) {
+    if (field === HONEYPOT_FIELD) continue
     if (typeof value === 'string') payload[field] = value
   }
 
-  const reference = `IL-${Date.now().toString(36).toUpperCase()}`
-
   const supabase = getSupabaseClient()
   if (!supabase) {
-    console.warn('[submitInquiry] Supabase not configured — submission not persisted', {
+    // Misconfiguration (missing Supabase settings). Do NOT report success —
+    // surface an honest error so a real submission is never silently lost.
+    console.error('[submitInquiry] Supabase not configured — submission not saved', {
       reference,
-      ...payload,
     })
-    return { ok: true, reference }
+    return { ok: false, error: 'Something went wrong on our end. Please try again.' }
   }
 
   const { error } = await supabase.from('inquiries').insert({

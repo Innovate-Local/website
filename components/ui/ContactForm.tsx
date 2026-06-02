@@ -62,6 +62,22 @@ export function ContactForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-8 w-full max-w-xl mx-auto">
+      {/* Honeypot: hidden from people; a bot that fills it is silently dropped. */}
+      <div
+        aria-hidden="true"
+        style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+      >
+        <label htmlFor="company_website">Company website (leave blank)</label>
+        <input
+          id="company_website"
+          name="company_website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          defaultValue=""
+        />
+      </div>
+
       <div className="space-y-1">
         <h2 className="font-headline text-3xl text-on-surface tracking-tight mb-2">
           {formTitle}
