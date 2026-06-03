@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { LegalPageLayout, H2, P, Sub, UL, LI, B } from '@/components/layout/LegalPageLayout'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy // Innovate Local',
+  title: 'Privacy Policy // InnovateLocal',
   description:
     'How InnovateLocal.ai collects, uses, protects, and shares information.',
 }
