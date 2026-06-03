@@ -70,16 +70,6 @@ export default function TermsPage() {
 
       <H2>{`15. Governing law`}</H2>
       <P>{`These Terms are governed by the laws of the Commonwealth of Pennsylvania, without regard to its conflict-of-laws rules. You agree that the exclusive venue for any dispute will be the state or federal courts located in Pennsylvania, unless otherwise required by applicable law.`}</P>
-
-      <H2>{`16. Contact us`}</H2>
-      <P>{`Questions about these Terms:`}</P>
-      <P>
-        {`Radians per Second Squared, LLC`}
-        <br />
-        {`State College, Pennsylvania`}
-        <br />
-        <a href="mailto:privacy@radsquared.ai" className="text-secondary underline hover:text-primary transition-colors">privacy@radsquared.ai</a>
-      </P>
     </LegalPageLayout>
   )
 }

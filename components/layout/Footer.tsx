@@ -19,12 +19,12 @@ export function Footer() {
         >
           Terms
         </Link>
-        <a
-          href="#"
+        <Link
+          href="/contact"
           className="font-body text-[10px] tracking-widest uppercase font-medium text-on-surface-variant hover:text-secondary transition-opacity"
         >
           Contact
-        </a>
+        </Link>
       </nav>
     </footer>
   )

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { LegalPageLayout, H2, P, Sub, UL, LI, B } from '@/components/layout/LegalPageLayout'
 
 export const metadata: Metadata = {
@@ -75,26 +76,16 @@ export default function PrivacyPage() {
         <LI><B>{`Request deletion`}</B>{` of your information.`}</LI>
         <LI><B>{`Opt out`}</B>{` of non-essential communications at any time using the unsubscribe link or by contacting us.`}</LI>
       </UL>
-      <P>{`To exercise these choices, contact us at privacy@radsquared.ai. Depending on where you live, you may have additional rights under applicable privacy laws, and we will honor those rights as required.`}</P>
+      <P>{`To exercise these choices, `}<Link href="/contact" className="text-secondary underline hover:text-primary transition-colors">contact us</Link>{`. Depending on where you live, you may have additional rights under applicable privacy laws, and we will honor those rights as required.`}</P>
 
       <H2>{`8. Children's privacy`}</H2>
-      <P>{`The Service is intended for adults (18 years of age or older) and for university-affiliated users and local organizations. The Service is not directed to children, and we do not knowingly collect personal information from children under 13. If you believe a child has provided us personal information, contact us at privacy@radsquared.ai and we will delete it.`}</P>
+      <P>{`The Service is intended for adults (18 years of age or older) and for university-affiliated users and local organizations. The Service is not directed to children, and we do not knowingly collect personal information from children under 13. If you believe a child has provided us personal information, `}<Link href="/contact" className="text-secondary underline hover:text-primary transition-colors">contact us</Link>{` and we will delete it.`}</P>
 
       <H2>{`9. Cookies and tracking`}</H2>
       <P>{`Consistent with Rad/s2's practice across our sites, we do not use advertising cookies, analytics platforms, or third-party tracking on innovatelocal.ai. We may use only the strictly necessary cookies required for the site and sign-up to function.`}</P>
 
       <H2>{`10. Changes to this Policy`}</H2>
       <P>{`We may update this Policy from time to time. When we do, we will revise the effective date above and, for material changes, provide additional notice where appropriate.`}</P>
-
-      <H2>{`11. Contact us`}</H2>
-      <P>{`Questions about this Policy or our data practices:`}</P>
-      <P>
-        {`Radians per Second Squared, LLC`}
-        <br />
-        {`State College, Pennsylvania`}
-        <br />
-        <a href="mailto:privacy@radsquared.ai" className="text-secondary underline hover:text-primary transition-colors">privacy@radsquared.ai</a>
-      </P>
     </LegalPageLayout>
   )
 }
