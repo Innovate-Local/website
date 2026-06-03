@@ -61,11 +61,11 @@ export function Navigation() {
         <div className="flex justify-between items-center w-full px-8 py-5 max-w-screen-2xl mx-auto">
           <Link
             href="/"
-            className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight lowercase"
-            aria-label="Innovate Local — home"
+            className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight"
+            aria-label="InnovateLocal home"
           >
             <ILMark className="h-8 w-auto" />
-            <span>innovate local</span>
+            <span>InnovateLocal</span>
           </Link>
 
           <nav className="hidden md:flex gap-12 items-center" aria-label="Primary">
@@ -90,12 +90,6 @@ export function Navigation() {
           </nav>
 
           <div className="hidden md:flex gap-3 items-center">
-            <Link
-              href="/join"
-              className="bg-secondary text-on-secondary border border-secondary px-5 py-3 font-headline text-base lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
-            >
-              join
-            </Link>
             <Link
               href="/partner"
               className="bg-secondary text-on-secondary border border-secondary px-5 py-3 font-headline text-base lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
@@ -128,9 +122,9 @@ export function Navigation() {
           aria-label="Site navigation"
         >
           <div className="flex justify-between items-center px-8 py-5 border-b border-surface-container-low">
-            <span className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight lowercase">
+            <span className="flex items-center gap-3 font-headline text-2xl font-normal text-on-surface tracking-tight">
               <ILMark className="h-8 w-auto" />
-              <span>innovate local</span>
+              <span>InnovateLocal</span>
             </span>
             <button
               onClick={close}
@@ -171,20 +165,6 @@ export function Navigation() {
             <div className="font-headline text-sm italic lowercase tracking-tight mb-2 text-on-surface-variant">
               get involved
             </div>
-            <Link
-              href="/join"
-              onClick={close}
-              className="block bg-secondary text-on-secondary border border-secondary px-6 py-5 text-center font-headline text-xl lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
-            >
-              join a hub
-            </Link>
-            <Link
-              href="/start"
-              onClick={close}
-              className="block bg-secondary text-on-secondary border border-secondary px-6 py-5 text-center font-headline text-xl lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
-            >
-              start a hub
-            </Link>
             <Link
               href="/partner"
               onClick={close}

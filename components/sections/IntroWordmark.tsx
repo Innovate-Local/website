@@ -27,7 +27,7 @@ export function IntroWordmark() {
   return (
     <section
       ref={ref}
-      aria-label="Innovate Local masthead"
+      aria-label="InnovateLocal masthead"
       className="relative w-full bg-surface"
       style={{ height: '250vh' }}
     >
@@ -140,10 +140,10 @@ function WordmarkWithRipple({ progress }: { progress: MotionValue<number> }) {
   return (
     <div className="relative w-full px-4 md:px-8 text-center">
       <motion.h1
-        className="font-headline lowercase whitespace-nowrap"
+        className="font-headline whitespace-nowrap"
         style={{ ...wordmarkStyle, color: textColor }}
       >
-        innovate local
+        InnovateLocal
       </motion.h1>
     </div>
   )

@@ -4,7 +4,7 @@ import { Navigation } from '@/components/layout/Navigation'
 import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'For Businesses // Innovate Local',
+  title: 'For Businesses // InnovateLocal',
   description:
     'For local businesses, non-profits, and community organizations. A team of AI talent helps solve a problem you have. No big budget required.',
 }
