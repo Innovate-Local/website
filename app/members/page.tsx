@@ -5,7 +5,7 @@ import { Footer } from '@/components/layout/Footer'
 import { MembersForm } from '@/components/ui/MembersForm'
 
 export const metadata: Metadata = {
-  title: 'Members // Innovate Local',
+  title: 'Members // InnovateLocal',
   description:
     'Members come to InnovateLocal to put AI to work on real problems — with student talent, shared tooling, and a regional peer network. Reserve a seat at the next Membership Information Session.',
 }

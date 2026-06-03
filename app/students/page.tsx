@@ -4,7 +4,7 @@ import { Navigation } from '@/components/layout/Navigation'
 import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'For Students // Innovate Local',
+  title: 'For Students // InnovateLocal',
   description:
     'For apprentices, students, and recent graduates. Applied work, real problems, in the community where you live.',
 }

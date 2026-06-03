@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SupportingPageShell } from '@/components/layout/SupportingPageShell'
 
 export const metadata: Metadata = {
-  title: 'Join a Hub // Innovate Local',
+  title: 'Join a Hub // InnovateLocal',
   description:
     'For apprentices and recent graduates. Work at a local AI hub in a university town. Applied work, not coursework.',
 }
