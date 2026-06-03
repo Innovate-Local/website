@@ -1,89 +1,101 @@
 import type { Metadata } from 'next'
-import { SupportingPageShell } from '@/components/layout/SupportingPageShell'
+import { Navigation } from '@/components/layout/Navigation'
+import { Footer } from '@/components/layout/Footer'
+import { Reveal } from '@/components/ui/Reveal'
+import { ContactForm } from '@/components/ui/ContactForm'
+import { PartnerHero } from '@/components/sections/partner/PartnerHero'
+import { PartnerTiers } from '@/components/sections/partner/PartnerTiers'
+import { PartnerBenefits } from '@/components/sections/partner/PartnerBenefits'
+import type { SupportingFormField } from '@/components/layout/SupportingPageShell'
 
 export const metadata: Metadata = {
-  title: 'Partner With Us // Innovate Local',
+  title: 'Community Innovation Partner // Innovate Local',
   description:
-    'For local businesses, non-profits, and sponsors. Engage a hub or fund one. Some of the tools come from the broader ecosystem. All of the benefit stays local.',
+    'Community Innovation Partners are the anchor investors who make Innovate Local possible — and who receive a structured portfolio of brand, employee, customer, and community outcomes in return.',
 }
+
+// Field ids double as the keys saved to the inquiry payload (and, later, the keys
+// the auto-reply system will read). Keep them stable and descriptive.
+const PARTNER_FIELDS: SupportingFormField[] = [
+  { id: 'fullName', label: 'Full Name', type: 'text', placeholder: 'First and last', required: true },
+  { id: 'title', label: 'Title', type: 'text', placeholder: 'Your role', required: true },
+  { id: 'email', label: 'Email', type: 'email', placeholder: 'Work email', required: true },
+  {
+    id: 'organization',
+    label: 'Organization',
+    type: 'text',
+    placeholder: 'Institution name',
+    required: true,
+  },
+  {
+    id: 'tier',
+    label: 'Tier Interest',
+    type: 'radio',
+    required: false,
+    colSpan: 2,
+    options: [
+      { value: 'catalyst', label: 'Community Catalyst' },
+      { value: 'anchor', label: 'Anchor Partner' },
+      { value: 'keystone', label: 'Keystone Partner' },
+      { value: 'unsure', label: 'Not sure yet' },
+    ],
+  },
+  {
+    id: 'context',
+    label: "What's driving your interest?",
+    type: 'textarea',
+    placeholder: 'A sentence or two is plenty.',
+    required: false,
+    colSpan: 2,
+    rows: 4,
+  },
+]
 
 export default function PartnerPage() {
   return (
-    <SupportingPageShell
-      inquiryType="partner"
-      stampLabel="Partnership Intake"
-      headline={
-        <>
-          Partner <br />
-          With Us.
-        </>
-      }
-      paragraphs={[
-        'If you run a local business, lead a non-profit, or fund civic work, a hub can help. Teams of recent graduates work directly with your organization to identify what AI can do, build tools that fit, and train your people to sustain them.',
-        'Some of the tools come from the broader ecosystem. All of the benefit stays local. No investors expecting returns. No pressure to prioritize high-margin clients over the organizations that need help most.',
-      ]}
-      listItems={[
-        {
-          number: '01',
-          title: 'Local Business Engagement',
-          body: 'A hub team sits with you, identifies high-impact problems, and builds AI tools to solve them.',
-        },
-        {
-          number: '02',
-          title: 'Non-Profit Support',
-          body: 'Automate donor outreach. Manage events. Focus your team on the work that matters.',
-        },
-        {
-          number: '03',
-          title: 'Sponsorship',
-          body: 'Fund a hub in a community you care about. Permanent infrastructure, not a pilot program.',
-        },
-      ]}
-      formTitle="Partner Registry"
-      formSubtitle="Tell us about your organization. We reply within two weeks."
-      formFields={[
-        {
-          id: 'fullName',
-          label: 'Full Name',
-          type: 'text',
-          placeholder: 'Your name',
-          required: true,
-          colSpan: 2,
-        },
-        {
-          id: 'email',
-          label: 'Email',
-          type: 'email',
-          placeholder: 'you@organization.org',
-          required: true,
-          colSpan: 2,
-        },
-        {
-          id: 'organization',
-          label: 'Organization',
-          type: 'text',
-          placeholder: 'Business, non-profit, or foundation name',
-          required: true,
-        },
-        {
-          id: 'relationship',
-          label: 'Relationship',
-          type: 'text',
-          placeholder: 'Business / Non-profit / Sponsor',
-          required: true,
-        },
-        {
-          id: 'statement',
-          label: 'How We Can Help',
-          type: 'textarea',
-          placeholder:
-            'Tell us about your organization, what you need, and where you are located.',
-          required: true,
-          colSpan: 2,
-          rows: 4,
-        },
-      ]}
-      submitLabel="Submit Inquiry"
-    />
+    <>
+      <Navigation />
+      <main id="main-content">
+        <PartnerHero />
+
+        <Reveal>
+          <PartnerTiers />
+        </Reveal>
+
+        <Reveal>
+          <PartnerBenefits />
+        </Reveal>
+
+        <Reveal>
+          <section
+            id="partner-form"
+            className="bg-surface-container-low py-24 md:py-32 px-6 scroll-mt-24"
+          >
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+              <div className="flex flex-col gap-6">
+                <p className="flex items-center gap-4 font-label text-[11px] tracking-[0.28em] uppercase text-primary font-medium">
+                  <span aria-hidden="true" className="inline-block w-8 h-[2px] bg-primary" />
+                  Partnership Intake
+                </p>
+                <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl tracking-tight leading-tight text-on-surface">
+                  Tell us about your institution.
+                </h2>
+                <p className="font-body text-lg text-on-surface-variant leading-relaxed max-w-md">
+                  Fill out the form and someone from our team will follow up within two weeks.
+                </p>
+                <p className="font-label text-[11px] tracking-[0.18em] uppercase text-on-surface-variant/70 mt-2">
+                  // Responses reviewed by the Innovate Local partnership team
+                </p>
+              </div>
+
+              <div className="bg-surface p-8 md:p-12">
+                <ContactForm type="partner" fields={PARTNER_FIELDS} submitLabel="Submit Inquiry" />
+              </div>
+            </div>
+          </section>
+        </Reveal>
+      </main>
+      <Footer />
+    </>
   )
 }

@@ -9,7 +9,7 @@ export type SubmitInquiryResult =
 const REQUIRED_FIELDS: Record<InquiryType, string[]> = {
   join: ['fullName', 'email', 'statement'],
   start: ['fullName', 'email', 'statement'],
-  partner: ['fullName', 'email', 'statement'],
+  partner: ['fullName', 'title', 'email', 'organization'],
   members: [
     'name',
     'title',

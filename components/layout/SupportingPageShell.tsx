@@ -13,11 +13,13 @@ export type SupportingListItem = {
 export type SupportingFormField = {
   id: string
   label: string
-  type?: 'text' | 'email' | 'textarea'
+  type?: 'text' | 'email' | 'textarea' | 'radio'
   placeholder?: string
   required?: boolean
   colSpan?: 1 | 2
   rows?: number
+  /** Choices for type === 'radio' (single-choice chip group). */
+  options?: { value: string; label: string }[]
 }
 
 export type SupportingPageShellProps = {
