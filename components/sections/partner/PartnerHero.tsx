@@ -18,7 +18,7 @@ export function PartnerHero() {
           This is not a sponsorship. It is an anchor investment in community-owned AI infrastructure.
         </p>
         <p className="font-body text-base md:text-lg text-on-surface-variant leading-relaxed max-w-2xl">
-          CIPs fund the operating capacity that makes Innovate Local run — and receive a structured
+          CIPs fund the operating capacity that makes InnovateLocal run — and receive a structured
           portfolio of brand, employee, customer, and community outcomes in return. Every dollar maps
           to a deployable service and a measurable outcome.
         </p>

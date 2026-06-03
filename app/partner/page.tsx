@@ -9,9 +9,9 @@ import { PartnerBenefits } from '@/components/sections/partner/PartnerBenefits'
 import type { SupportingFormField } from '@/components/layout/SupportingPageShell'
 
 export const metadata: Metadata = {
-  title: 'Community Innovation Partner // Innovate Local',
+  title: 'Community Innovation Partner // InnovateLocal',
   description:
-    'Community Innovation Partners are the anchor investors who make Innovate Local possible — and who receive a structured portfolio of brand, employee, customer, and community outcomes in return.',
+    'Community Innovation Partners are the anchor investors who make InnovateLocal possible — and who receive a structured portfolio of brand, employee, customer, and community outcomes in return.',
 }
 
 // Field ids double as the keys saved to the inquiry payload (and, later, the keys
@@ -84,7 +84,7 @@ export default function PartnerPage() {
                   Fill out the form and someone from our team will follow up within two weeks.
                 </p>
                 <p className="font-label text-[11px] tracking-[0.18em] uppercase text-on-surface-variant/70 mt-2">
-                  // Responses reviewed by the Innovate Local partnership team
+                  // Responses reviewed by the InnovateLocal partnership team
                 </p>
               </div>
 

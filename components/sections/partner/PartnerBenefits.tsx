@@ -13,7 +13,7 @@ const BENEFITS: Benefit[] = [
     num: '02',
     cat: 'Community',
     title: 'Visible Footprint Investment',
-    body: 'Sponsor access to Innovate Local for nonprofits, municipalities, and community organizations in your region. CRA-eligible at every tier, with documented outcomes your institution can stand behind.',
+    body: 'Sponsor access to InnovateLocal for nonprofits, municipalities, and community organizations in your region. CRA-eligible at every tier, with documented outcomes your institution can stand behind.',
   },
   {
     num: '03',
