@@ -85,7 +85,7 @@ export function Apparatus() {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary px-2 font-label text-[10px] text-on-primary uppercase">
                 Router
               </div>
-              <span className="font-headline text-2xl">Innovate Local</span>
+              <span className="font-headline text-2xl">InnovateLocal</span>
               <p className="font-label text-[11px] text-on-primary mt-2 uppercase tracking-wider opacity-80">
                 Provides the structure
               </p>
