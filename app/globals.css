@@ -4,10 +4,10 @@
 
 /*
   Material Symbols Outlined — used for inline iconography throughout the site.
-  Loaded via Google Fonts. Kept separate from Next.js font loading because it's an
-  icon font, not a text font.
+  The icon font itself is loaded via a <link> in app/layout.tsx (an @import here
+  gets reordered after Tailwind's rules during static export and is ignored).
+  The .material-symbols-outlined class below applies that font + ligature support.
 */
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 /*
   Modern Bureau — design tokens
@@ -122,8 +122,21 @@
     border-radius: 0;
   }
 
-  /* Material Symbols sizing defaults */
+  /* Material Symbols: bind the icon font + enable ligatures so names like
+     "work"/"trending_up"/"bolt" render as glyphs instead of literal text. */
   .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 }
