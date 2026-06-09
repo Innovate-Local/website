@@ -5,9 +5,9 @@ const hubServices = [
     body: 'Workshops and seminars for local businesses and non-profits on AI adoption.',
   },
   {
-    icon: 'handshake',
-    label: 'Consulting',
-    body: 'Hands-on help assessing needs, selecting tools, deploying solutions.',
+    icon: 'rocket_launch',
+    label: 'Innovation',
+    body: 'Innovation teams built for transformation, not incremental improvement.',
   },
   {
     icon: 'groups',
@@ -15,9 +15,9 @@ const hubServices = [
     body: 'University students doing applied deployment work as part of their experiential learning.',
   },
   {
-    icon: 'forum',
-    label: 'Community',
-    body: 'Regular programming keeping local organizations connected and learning.',
+    icon: 'person_add',
+    label: 'Placement',
+    body: 'Team members become new hires to grow your internal AI talent.',
   },
 ]
 
