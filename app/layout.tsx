@@ -19,7 +19,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'InnovateLocal',
   description:
-    'A modern Civilian Conservation Corps for AI. Non-profit AI hubs in university towns, placing teams of recent graduates with local businesses and community organizations.',
+    'A modern Civilian Conservation Corps for AI. Local AI hubs in university towns, placing teams of recent graduates with local businesses and community organizations.',
 }
 
 export default function RootLayout({
