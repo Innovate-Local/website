@@ -46,7 +46,8 @@ export function ContactForm({
         </div>
         <h2 className="font-headline text-3xl text-on-surface">Your inquiry is in.</h2>
         <p className="font-body text-on-surface-variant leading-relaxed">
-          We will be in touch at the email you provided. Your reference is{' '}
+          A confirmation email is on its way to the address you provided, and
+          we&rsquo;ll be in touch. Your reference is{' '}
           <span className="font-label text-on-surface">{result.reference}</span>.
         </p>
         <button
