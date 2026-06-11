@@ -78,9 +78,9 @@ export function MembersForm() {
         </div>
         <h3 className="font-headline text-3xl text-on-surface">Your seat is held.</h3>
         <p className="font-body text-on-surface-variant leading-relaxed">
-          You&rsquo;ll receive a confirmation email shortly with session times
-          and a calendar link. If your situation is time-sensitive, we&rsquo;ll
-          reach out directly.
+          You&rsquo;ll receive a confirmation email shortly; session details
+          and the calendar invite will follow separately. If your situation is
+          time-sensitive, we&rsquo;ll reach out directly.
         </p>
         <p className="font-body text-sm text-on-surface-variant">
           Reference:{' '}
