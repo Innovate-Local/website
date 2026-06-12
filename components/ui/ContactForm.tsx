@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import {
   submitInquiry,
   type InquiryType,
@@ -8,12 +8,19 @@ import {
 } from '@/app/actions/submitInquiry'
 import type { SupportingFormField } from '@/components/layout/SupportingPageShell'
 
+// An externally-driven selection for one radio field (e.g. the partner page's
+// tier cards checking the matching "Tier Interest" chip). `seq` must increase
+// on every trigger so re-selecting the same value still re-applies after the
+// visitor changed the chips by hand.
+export type RadioPreset = { field: string; value: string; seq: number }
+
 type ContactFormProps = {
   type: InquiryType
   formTitle?: string
   formSubtitle?: string
   fields: SupportingFormField[]
   submitLabel: string
+  radioPreset?: RadioPreset | null
 }
 
 export function ContactForm({
@@ -22,9 +29,23 @@ export function ContactForm({
   formSubtitle,
   fields,
   submitLabel,
+  radioPreset,
 }: ContactFormProps) {
   const [result, setResult] = useState<SubmitInquiryResult | null>(null)
   const [isPending, startTransition] = useTransition()
+  // Radio chips are React-controlled (rather than browser-managed) so a preset
+  // can check them from outside and an optional group can be un-picked by
+  // clicking its selected chip again.
+  const [radioValues, setRadioValues] = useState<Record<string, string>>({})
+
+  const presetField = radioPreset?.field
+  const presetValue = radioPreset?.value
+  const presetSeq = radioPreset?.seq
+  useEffect(() => {
+    if (presetField && presetValue) {
+      setRadioValues((prev) => ({ ...prev, [presetField]: presetValue }))
+    }
+  }, [presetField, presetValue, presetSeq])
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -34,6 +55,7 @@ export function ContactForm({
       setResult(r)
       if (r.ok) {
         e.currentTarget?.reset?.()
+        setRadioValues({})
       }
     })
   }
@@ -123,6 +145,17 @@ export function ContactForm({
                         value={opt.value}
                         required={field.required}
                         disabled={isPending}
+                        checked={radioValues[field.id] === opt.value}
+                        onChange={() =>
+                          setRadioValues((prev) => ({ ...prev, [field.id]: opt.value }))
+                        }
+                        onClick={() => {
+                          // Optional groups can be un-picked by clicking the
+                          // selected chip again (a plain radio can't do this).
+                          if (!field.required && radioValues[field.id] === opt.value) {
+                            setRadioValues((prev) => ({ ...prev, [field.id]: '' }))
+                          }
+                        }}
                         className="sr-only"
                       />
                       {opt.label}
