@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import { Navigation } from '@/components/layout/Navigation'
 import { Footer } from '@/components/layout/Footer'
 import { Reveal } from '@/components/ui/Reveal'
-import { ContactForm } from '@/components/ui/ContactForm'
 import { PartnerHero } from '@/components/sections/partner/PartnerHero'
 import { PartnerTiers } from '@/components/sections/partner/PartnerTiers'
 import { PartnerBenefits } from '@/components/sections/partner/PartnerBenefits'
+import { PartnerIntakeForm } from '@/components/sections/partner/PartnerIntakeForm'
+import { TierSelectionProvider } from '@/components/sections/partner/TierSelection'
 import type { SupportingFormField } from '@/components/layout/SupportingPageShell'
 
 export const metadata: Metadata = {
@@ -58,42 +59,44 @@ export default function PartnerPage() {
       <main id="main-content">
         <PartnerHero />
 
-        <Reveal>
-          <PartnerTiers />
-        </Reveal>
+        <TierSelectionProvider>
+          <Reveal>
+            <PartnerTiers />
+          </Reveal>
 
-        <Reveal>
-          <PartnerBenefits />
-        </Reveal>
+          <Reveal>
+            <PartnerBenefits />
+          </Reveal>
 
-        <Reveal>
-          <section
-            id="partner-form"
-            className="bg-surface-container-low py-24 md:py-32 px-6 scroll-mt-24"
-          >
-            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-              <div className="flex flex-col gap-6">
-                <p className="flex items-center gap-4 font-label text-[11px] tracking-[0.28em] uppercase text-primary font-medium">
-                  <span aria-hidden="true" className="inline-block w-8 h-[2px] bg-primary" />
-                  Partnership Intake
-                </p>
-                <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl tracking-tight leading-tight text-on-surface">
-                  Tell us about your institution.
-                </h2>
-                <p className="font-body text-lg text-on-surface-variant leading-relaxed max-w-md">
-                  Fill out the form and someone from our team will follow up within two weeks.
-                </p>
-                <p className="font-label text-[11px] tracking-[0.18em] uppercase text-on-surface-variant/70 mt-2">
-                  // Responses reviewed by the InnovateLocal partnership team
-                </p>
+          <Reveal>
+            <section
+              id="partner-form"
+              className="bg-surface-container-low py-24 md:py-32 px-6 scroll-mt-24"
+            >
+              <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+                <div className="flex flex-col gap-6">
+                  <p className="flex items-center gap-4 font-label text-[11px] tracking-[0.28em] uppercase text-primary font-medium">
+                    <span aria-hidden="true" className="inline-block w-8 h-[2px] bg-primary" />
+                    Partnership Intake
+                  </p>
+                  <h2 className="font-headline text-3xl md:text-4xl lg:text-5xl tracking-tight leading-tight text-on-surface">
+                    Tell us about your institution.
+                  </h2>
+                  <p className="font-body text-lg text-on-surface-variant leading-relaxed max-w-md">
+                    Fill out the form and someone from our team will follow up within two weeks.
+                  </p>
+                  <p className="font-label text-[11px] tracking-[0.18em] uppercase text-on-surface-variant/70 mt-2">
+                    // Responses reviewed by the InnovateLocal partnership team
+                  </p>
+                </div>
+
+                <div className="bg-surface p-8 md:p-12">
+                  <PartnerIntakeForm fields={PARTNER_FIELDS} />
+                </div>
               </div>
-
-              <div className="bg-surface p-8 md:p-12">
-                <ContactForm type="partner" fields={PARTNER_FIELDS} submitLabel="Submit Inquiry" />
-              </div>
-            </div>
-          </section>
-        </Reveal>
+            </section>
+          </Reveal>
+        </TierSelectionProvider>
       </main>
       <Footer />
     </>

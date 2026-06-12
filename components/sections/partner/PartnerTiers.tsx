@@ -1,13 +1,19 @@
+'use client'
+
 // Partner page — the three CIP tiers. Cards are separated by thin warm-bone
 // gaps (gap-1 on a surface band) rather than borders, and the highlight rows use
 // soft low-opacity dividers, matching the site's restrained "no hard lines" feel.
 // The three backgrounds form a gentle light-to-deeper ramp (low → high → dim).
+import { useTierSelection, type TierValue } from './TierSelection'
+
 type Tier = {
   badge: string
   name: string
   desc: string
   highlights: string[]
   bg: string
+  // Must match the matching option value in the form's "Tier Interest" field.
+  formValue: TierValue
 }
 
 const TIERS: Tier[] = [
@@ -21,6 +27,7 @@ const TIERS: Tier[] = [
       'Employee workshop access',
     ],
     bg: 'bg-surface-container-low',
+    formValue: 'catalyst',
   },
   {
     badge: '// Tier Two',
@@ -32,6 +39,7 @@ const TIERS: Tier[] = [
       'AI literacy program for up to 20 staff',
     ],
     bg: 'bg-surface-container-high',
+    formValue: 'anchor',
   },
   {
     badge: '// Tier Three',
@@ -43,10 +51,12 @@ const TIERS: Tier[] = [
       'Program naming rights + Founding designation',
     ],
     bg: 'bg-surface-dim',
+    formValue: 'keystone',
   },
 ]
 
 export function PartnerTiers() {
+  const { selectTier } = useTierSelection()
   return (
     <section className="bg-surface-container-low py-24 md:py-32 px-6">
       <div className="max-w-7xl mx-auto">
@@ -87,6 +97,7 @@ export function PartnerTiers() {
               </div>
               <a
                 href="#partner-form"
+                onClick={() => selectTier(tier.formValue)}
                 className="mt-auto inline-block text-center font-label text-[11px] tracking-[0.22em] uppercase font-bold px-7 py-4 transition-colors bg-primary text-on-primary hover:bg-secondary"
               >
                 Select
