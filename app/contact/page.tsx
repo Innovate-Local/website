@@ -55,20 +55,15 @@ export default function ContactPage() {
               </div>
               <div>
                 <dt className="font-label text-xs uppercase tracking-widest text-on-surface-variant/70 mb-1">
-                  Phone
-                </dt>
-                {/* TODO: add phone number once decided */}
-                <dd className="font-body text-base md:text-lg text-on-surface-variant/40">
-                  &nbsp;
-                </dd>
-              </div>
-              <div>
-                <dt className="font-label text-xs uppercase tracking-widest text-on-surface-variant/70 mb-1">
                   Email
                 </dt>
-                {/* TODO: add email once privacy-vs-general decision is made */}
-                <dd className="font-body text-base md:text-lg text-on-surface-variant/40">
-                  &nbsp;
+                <dd className="font-body text-base md:text-lg text-on-surface">
+                  <a
+                    href="mailto:hello@innovatelocal.ai"
+                    className="hover:text-primary transition-colors"
+                  >
+                    hello@innovatelocal.ai
+                  </a>
                 </dd>
               </div>
             </dl>
