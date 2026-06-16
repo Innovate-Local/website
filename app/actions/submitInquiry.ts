@@ -6,77 +6,60 @@ export type SubmitInquiryResult =
   | { ok: true; reference: string }
   | { ok: false; error: string }
 
-const REQUIRED_FIELDS: Record<InquiryType, string[]> = {
-  join: ['fullName', 'email', 'statement'],
-  partner: ['fullName', 'title', 'email', 'organization'],
-  members: [
-    'name',
-    'title',
-    'email',
-    'organization',
-    'location',
-    'industry',
-    'size',
-    'nonprofitDesignation',
-    'challenge',
-  ],
-}
+// The Cloudflare Turnstile widget may also inject a field by this name into the
+// form; we send the token explicitly and never store it, so it's filtered out.
+const TURNSTILE_FIELD = 'cf-turnstile-response'
 
-// Hidden form field that real people never see or fill. Bots tend to fill every
-// field, so a non-empty value here marks the submission as automated spam.
-const HONEYPOT_FIELD = 'company_website'
-
+// Submissions no longer write to the database directly. They POST to the
+// `submit-inquiry` Edge Function, which verifies the human-check token
+// (server-side, with the secret key) and only then saves the row. The browser
+// holds only the public site key, so the check can't be forged here.
 export async function submitInquiry(
   type: InquiryType,
   formData: FormData,
+  token: string,
 ): Promise<SubmitInquiryResult> {
-  const reference = `IL-${Date.now().toString(36).toUpperCase()}`
-
-  // Honeypot: if this hidden field has any value, a bot filled it. Accept the
-  // request (so the bot gets no signal that it was caught) but save nothing.
-  if (formData.get(HONEYPOT_FIELD)?.toString().trim()) {
-    return { ok: true, reference }
+  if (!token) {
+    return { ok: false, error: 'Please complete the verification check below and try again.' }
   }
 
-  const required = REQUIRED_FIELDS[type]
-  for (const field of required) {
-    const value = formData.get(field)?.toString().trim()
-    if (!value) {
-      return { ok: false, error: 'Please fill in all required fields.' }
-    }
-  }
-
-  const email = formData.get('email')?.toString().trim() ?? ''
-  if (!email.includes('@')) {
-    return { ok: false, error: 'Please provide a valid email address.' }
-  }
-
-  const payload: Record<string, string> = { type }
+  // Everything the visitor typed, minus the verification token (sent separately).
+  const fields: Record<string, string> = {}
   for (const [field, value] of formData.entries()) {
-    if (field === HONEYPOT_FIELD) continue
-    if (typeof value === 'string') payload[field] = value
+    if (field === TURNSTILE_FIELD) continue
+    if (typeof value === 'string') fields[field] = value
   }
 
   const supabase = getSupabaseClient()
   if (!supabase) {
-    // Misconfiguration (missing Supabase settings). Do NOT report success —
-    // surface an honest error so a real submission is never silently lost.
-    console.error('[submitInquiry] Supabase not configured — submission not saved', {
-      reference,
+    // Misconfiguration (missing Supabase settings). Surface an honest error so a
+    // real submission is never silently lost.
+    console.error('[submitInquiry] Supabase not configured — submission not saved')
+    return { ok: false, error: 'Something went wrong on our end. Please try again.' }
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke<{
+      ok: boolean
+      reference?: string
+      error?: string
+    }>('submit-inquiry', {
+      body: { type, token, fields },
     })
+
+    if (error) {
+      console.error('[submitInquiry] function call failed', error)
+      return { ok: false, error: 'Something went wrong on our end. Please try again.' }
+    }
+    if (data?.ok) {
+      return { ok: true, reference: String(data.reference ?? '') }
+    }
+    return {
+      ok: false,
+      error: data?.error ? String(data.error) : 'Something went wrong. Please try again.',
+    }
+  } catch (e) {
+    console.error('[submitInquiry] unexpected error', e)
     return { ok: false, error: 'Something went wrong on our end. Please try again.' }
   }
-
-  const { error } = await supabase.from('inquiries').insert({
-    type,
-    payload,
-    reference,
-  })
-
-  if (error) {
-    console.error('[submitInquiry] Supabase insert failed', error)
-    return { ok: false, error: 'Something went wrong on our end. Please try again.' }
-  }
-
-  return { ok: true, reference }
 }
