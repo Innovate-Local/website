@@ -74,13 +74,13 @@ export function MembersForm() {
     return (
       <div className="flex flex-col gap-4 text-center py-8">
         <div className="font-label text-xs uppercase tracking-widest text-primary">
-          Reserved
+          Received
         </div>
-        <h3 className="font-headline text-3xl text-on-surface">Your seat is held.</h3>
+        <h3 className="font-headline text-3xl text-on-surface">Thanks! We&rsquo;ve received your inquiry.</h3>
         <p className="font-body text-on-surface-variant leading-relaxed">
-          You&rsquo;ll receive a confirmation email shortly; session details
-          and the calendar invite will follow separately. If your situation is
-          time-sensitive, we&rsquo;ll reach out directly.
+          You&rsquo;ll receive a confirmation email shortly. We&rsquo;ll follow
+          up with session details and a calendar invite for the next available
+          session.
         </p>
         <p className="font-body text-sm text-on-surface-variant">
           Reference:{' '}
