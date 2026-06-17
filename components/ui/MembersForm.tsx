@@ -5,6 +5,7 @@ import {
   submitInquiry,
   type SubmitInquiryResult,
 } from '@/app/actions/submitInquiry'
+import { TurnstileWidget } from '@/components/ui/TurnstileWidget'
 
 const INDUSTRY_OPTIONS = [
   'Retail',
@@ -55,17 +56,24 @@ export function MembersForm() {
   const [result, setResult] = useState<SubmitInquiryResult | null>(null)
   const [designation, setDesignation] = useState('for-profit')
   const [isPending, startTransition] = useTransition()
+  // Human-check (Cloudflare Turnstile) token, plus a nonce to refresh the widget
+  // after a failed submit (tokens are single-use).
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaNonce, setCaptchaNonce] = useState(0)
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = e.currentTarget
     const formData = new FormData(form)
     startTransition(async () => {
-      const r = await submitInquiry('members', formData)
+      const r = await submitInquiry('members', formData, captchaToken)
       setResult(r)
       if (r.ok) {
         form.reset()
         setDesignation('for-profit')
+      } else {
+        setCaptchaToken('')
+        setCaptchaNonce((n) => n + 1)
       }
     })
   }
@@ -88,7 +96,10 @@ export function MembersForm() {
         </p>
         <button
           type="button"
-          onClick={() => setResult(null)}
+          onClick={() => {
+            setResult(null)
+            setCaptchaToken('')
+          }}
           className="mt-4 self-center font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors"
         >
           Reserve Another Seat
@@ -347,9 +358,15 @@ export function MembersForm() {
         </div>
       )}
 
+      <TurnstileWidget
+        onVerify={setCaptchaToken}
+        onExpire={() => setCaptchaToken('')}
+        resetSignal={captchaNonce}
+      />
+
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || !captchaToken}
         className="w-full bg-primary hover:bg-secondary text-on-primary font-label text-[13px] uppercase tracking-[0.22em] font-bold py-5 px-8 transition-colors flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed mt-2"
       >
         <span>{isPending ? 'Submitting…' : 'Reserve My Seat'}</span>

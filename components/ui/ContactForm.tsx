@@ -7,6 +7,7 @@ import {
   type SubmitInquiryResult,
 } from '@/app/actions/submitInquiry'
 import type { SupportingFormField } from '@/components/layout/SupportingPageShell'
+import { TurnstileWidget } from '@/components/ui/TurnstileWidget'
 
 // An externally-driven selection for one radio field (e.g. the partner page's
 // tier cards checking the matching "Tier Interest" chip). `seq` must increase
@@ -37,6 +38,10 @@ export function ContactForm({
   // can check them from outside and an optional group can be un-picked by
   // clicking its selected chip again.
   const [radioValues, setRadioValues] = useState<Record<string, string>>({})
+  // Human-check (Cloudflare Turnstile) token, plus a nonce that forces a fresh
+  // widget after a failed submit (tokens are single-use).
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaNonce, setCaptchaNonce] = useState(0)
 
   const presetField = radioPreset?.field
   const presetValue = radioPreset?.value
@@ -51,11 +56,15 @@ export function ContactForm({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     startTransition(async () => {
-      const r = await submitInquiry(type, formData)
+      const r = await submitInquiry(type, formData, captchaToken)
       setResult(r)
       if (r.ok) {
         e.currentTarget?.reset?.()
         setRadioValues({})
+      } else {
+        // The token was consumed by the attempt; refresh for a new one.
+        setCaptchaToken('')
+        setCaptchaNonce((n) => n + 1)
       }
     })
   }
@@ -74,7 +83,10 @@ export function ContactForm({
         </p>
         <button
           type="button"
-          onClick={() => setResult(null)}
+          onClick={() => {
+            setResult(null)
+            setCaptchaToken('')
+          }}
           className="mt-4 self-center font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors"
         >
           Submit Another
@@ -209,10 +221,17 @@ export function ContactForm({
         </div>
       )}
 
+      <TurnstileWidget
+        onVerify={setCaptchaToken}
+        onExpire={() => setCaptchaToken('')}
+        resetSignal={captchaNonce}
+        className="pt-2"
+      />
+
       <div className="pt-4 mt-2">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || !captchaToken}
           className="w-full bg-primary hover:bg-primary-container text-on-primary font-label text-sm uppercase tracking-widest font-bold py-5 px-8 transition-colors flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <span>{isPending ? 'Submitting...' : submitLabel}</span>
