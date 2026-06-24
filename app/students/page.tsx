@@ -41,12 +41,20 @@ export default function StudentsPage() {
             Real problems, real organizations, real impact.
           </p>
 
-          <Link
-            href="/join"
-            className="inline-block bg-primary text-on-primary border border-primary px-10 py-6 font-label text-sm uppercase tracking-widest hover:bg-secondary hover:border-secondary transition-colors"
-          >
-            Become an Apprentice
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/join"
+              className="inline-block bg-primary text-on-primary border border-primary px-10 py-6 font-label text-sm uppercase tracking-widest hover:bg-secondary hover:border-secondary transition-colors"
+            >
+              Become an Apprentice
+            </Link>
+            <Link
+              href="/students/apply"
+              className="inline-block border border-outline-variant text-on-surface px-10 py-6 font-label text-sm uppercase tracking-widest hover:border-primary hover:text-primary transition-colors"
+            >
+              Submit Your Resume
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />

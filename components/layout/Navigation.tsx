@@ -89,7 +89,13 @@ export function Navigation() {
             </a>
           </nav>
 
-          <div className="hidden md:flex gap-3 items-center">
+          <div className="hidden md:flex gap-6 items-center">
+            <Link
+              href="/students"
+              className="text-on-surface-variant hover:text-primary transition-colors font-headline text-xl lowercase tracking-tight leading-none px-2 py-2"
+            >
+              students
+            </Link>
             <Link
               href="/partner"
               className="bg-secondary text-on-secondary border border-secondary px-5 py-3 font-headline text-base lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
@@ -171,6 +177,13 @@ export function Navigation() {
               className="block bg-secondary text-on-secondary border border-secondary px-6 py-5 text-center font-headline text-xl lowercase tracking-tight hover:bg-primary hover:text-on-primary hover:border-primary transition-colors"
             >
               partner with us
+            </Link>
+            <Link
+              href="/students"
+              onClick={close}
+              className="block border border-outline-variant text-on-surface px-6 py-5 text-center font-headline text-xl lowercase tracking-tight hover:border-primary hover:text-primary transition-colors"
+            >
+              for students
             </Link>
           </div>
         </div>
