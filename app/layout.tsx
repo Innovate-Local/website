@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Newsreader, Inter } from 'next/font/google'
 import './globals.css'
+import { PostHogIdentify } from '@/components/analytics/PostHogIdentify'
 
 const newsreader = Newsreader({
   subsets: ['latin'],
@@ -47,6 +48,7 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-main">
           Skip to main content
         </a>
+        <PostHogIdentify />
         {children}
       </body>
     </html>
