@@ -46,8 +46,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const interests = isStaff ? await getProjectInterests(id) : []
   const orgsBrief = isStaff ? await listOrganizationsBrief() : []
 
+  // An apprentice may be viewing this as an open opportunity (not on the team).
+  const isApprentice = profile.role === 'apprentice'
+  const isAssigned = team.some((m) => m.userId === profile.id)
+  const browsingOpportunity = isApprentice && !isAssigned
+
   // Staff and assigned apprentices manage deliverables; others read.
-  const canManageDeliverables = isStaff || profile.role === 'apprentice'
+  const canManageDeliverables = isStaff || (isApprentice && isAssigned)
 
   // Feedback opens once the engagement is delivered/closed.
   const feedbackOpen = isFeedbackOpen(project.status as ProjectStatus)
@@ -104,6 +109,20 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </div>
         )}
       </div>
+
+      {browsingOpportunity && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container-low p-5">
+          <span className="font-body text-on-surface-variant">
+            You’re viewing an open project you’re not on yet.
+          </span>
+          <Link
+            href="/dashboard/opportunities"
+            className="font-label text-xs uppercase tracking-widest text-primary hover:text-primary-container transition-colors"
+          >
+            Express interest →
+          </Link>
+        </div>
+      )}
 
       {/* Status */}
       <section className="flex flex-col gap-4">
@@ -237,7 +256,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             projectId={project.id}
             orgName={project.orgName}
             canRate={isStaff || profile.role === 'org_member'}
-            canReflect={profile.role === 'apprentice'}
+            canReflect={isApprentice && isAssigned}
             teamApprentices={team.map((m) => ({ userId: m.userId, name: m.fullName || m.email || '—' }))}
             myApprenticeRatings={myApprenticeRatings}
             myReflection={myReflection}

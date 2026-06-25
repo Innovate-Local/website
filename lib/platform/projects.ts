@@ -110,6 +110,9 @@ export async function getProjectForUser(
   if (profile.role === 'hub_staff') return proj
 
   if (profile.role === 'apprentice') {
+    // Open projects are browsable by any apprentice (they're the Opportunities
+    // feed). Closed/delivered ones are visible only if they were on the team.
+    if ((OPEN_STATUSES as readonly string[]).includes(proj.status)) return proj
     const [a] = await db
       .select({ id: projectAssignments.id })
       .from(projectAssignments)
