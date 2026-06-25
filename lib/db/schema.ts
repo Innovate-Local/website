@@ -191,6 +191,31 @@ export const projectAssignments = pgTable(
   }),
 )
 
+// project_requests — org members propose work; staff convert to a project.
+export const projectRequests = pgTable(
+  'project_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    submittedBy: uuid('submitted_by'),
+    title: text('title').notNull(),
+    summary: text('summary'),
+    problemStatement: text('problem_statement'),
+    status: text('status').$type<'open' | 'converted' | 'declined'>().notNull().default('open'),
+    declineReason: text('decline_reason'),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    reviewedBy: uuid('reviewed_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index('project_requests_org_idx').on(t.orgId),
+    statusIdx: index('project_requests_status_idx').on(t.status),
+  }),
+)
+
 // apprentice_profiles — the matching/portfolio detail for an apprentice account
 // (1:1). Mirrors supabase/migrations/20260626150000_*.
 export const apprenticeProfiles = pgTable('apprentice_profiles', {
@@ -387,5 +412,7 @@ export type ApprenticeProfile = typeof apprenticeProfiles.$inferSelect
 export type NewApprenticeProfile = typeof apprenticeProfiles.$inferInsert
 export type OrgSubscription = typeof orgSubscriptions.$inferSelect
 export type Payment = typeof payments.$inferSelect
+export type ProjectRequest = typeof projectRequests.$inferSelect
+export type NewProjectRequest = typeof projectRequests.$inferInsert
 export type ProjectDeliverable = typeof projectDeliverables.$inferSelect
 export type NewProjectDeliverable = typeof projectDeliverables.$inferInsert

@@ -5,8 +5,10 @@ import {
   listOrganizationsBrief,
   PROJECT_STATUS_LABEL,
 } from '@/lib/platform/projects'
+import { listOpenRequests } from '@/lib/platform/project-requests'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { CreateProjectForm } from '@/components/platform/CreateProjectForm'
+import { ProjectRequestReview } from '@/components/platform/ProjectRequestReview'
 
 const EYEBROW: Record<string, string> = {
   hub_staff: 'Hub engagements',
@@ -19,6 +21,7 @@ export default async function ProjectsPage() {
   const user = await getUser()
   const projects = user ? await listProjectsForUser(profile, user.id) : []
   const isStaff = profile.role === 'hub_staff'
+  const openRequests = isStaff ? await listOpenRequests() : []
 
   return (
     <div className="flex flex-col">
@@ -28,6 +31,15 @@ export default async function ProjectsPage() {
         <div className="mb-10">
           <CreateProjectForm organizations={await listOrganizationsBrief()} />
         </div>
+      )}
+
+      {isStaff && openRequests.length > 0 && (
+        <section className="mb-10 flex flex-col gap-4">
+          <h2 className="font-headline text-2xl text-on-surface">
+            Incoming requests <span className="text-on-surface-variant">({openRequests.length})</span>
+          </h2>
+          <ProjectRequestReview requests={openRequests} />
+        </section>
       )}
 
       {projects.length === 0 ? (

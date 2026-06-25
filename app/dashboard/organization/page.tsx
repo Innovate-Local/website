@@ -7,10 +7,13 @@ import {
   getPrimaryOrgForUser,
 } from '@/lib/platform/credits'
 import { PROJECT_STATUS_LABEL } from '@/lib/platform/project-status'
+import { listOrgRequests, REQUEST_STATUS_LABEL } from '@/lib/platform/project-requests'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { Metric, MetricGrid } from '@/components/platform/Metric'
 import { OrgMembersPanel } from '@/components/platform/OrgMembersPanel'
 import { AddMemberForm } from '@/components/platform/AddMemberForm'
+import { OrgProjectCreateForm } from '@/components/platform/OrgProjectCreateForm'
+import { ProjectRequestForm } from '@/components/platform/ProjectRequestForm'
 
 // The org member's view of their own organization: structure, people, credit
 // position, and the projects it's running. Admins can manage the team here.
@@ -31,11 +34,13 @@ export default async function OrganizationPage() {
   }
 
   const isAdmin = org.roleInOrg === 'admin'
-  const [balance, members, projects] = await Promise.all([
+  const [balance, members, projects, requests] = await Promise.all([
     getOrgBalance(org.orgId),
     getOrgMembers(org.orgId),
     getOrgProjects(org.orgId),
+    listOrgRequests(org.orgId),
   ])
+  const openRequests = requests.filter((r) => r.status === 'open')
   const meta = [org.orgType, org.location, org.industry, org.size].filter(Boolean).join(' · ')
 
   return (
@@ -64,12 +69,18 @@ export default async function OrganizationPage() {
 
       {/* Projects */}
       <section className="flex flex-col gap-4">
-        <h2 className="font-headline text-2xl text-on-surface">
-          Projects <span className="text-on-surface-variant">({projects.length})</span>
-        </h2>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="font-headline text-2xl text-on-surface">
+            Projects <span className="text-on-surface-variant">({projects.length})</span>
+          </h2>
+          {/* Admins create directly; members request and staff review. */}
+          {isAdmin ? <OrgProjectCreateForm /> : <ProjectRequestForm />}
+        </div>
         {projects.length === 0 ? (
           <p className="bg-surface-container-low p-8 font-body text-on-surface-variant">
-            No projects yet. Your hub team scopes projects with your organization.
+            {isAdmin
+              ? 'No projects yet. Create your first one above.'
+              : 'No projects yet. Request one above, or your hub team will scope projects with your organization.'}
           </p>
         ) : (
           <ul className="flex flex-col gap-px border border-outline-variant/30 bg-outline-variant/30">
@@ -93,6 +104,46 @@ export default async function OrganizationPage() {
           </ul>
         )}
       </section>
+
+      {/* Project requests (members propose; staff review) */}
+      {requests.length > 0 && (
+        <section className="flex flex-col gap-4">
+          <h2 className="font-headline text-2xl text-on-surface">
+            Project requests <span className="text-on-surface-variant">({openRequests.length} open)</span>
+          </h2>
+          <ul className="flex flex-col gap-px border border-outline-variant/30 bg-outline-variant/30">
+            {requests.map((r) => (
+              <li key={r.id} className="flex flex-col gap-1 bg-surface px-5 py-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <span className="flex min-w-0 flex-col">
+                    <span className="font-body text-on-surface">
+                      {r.projectId ? (
+                        <Link href={`/dashboard/projects/${r.projectId}`} className="hover:text-primary transition-colors">
+                          {r.title}
+                        </Link>
+                      ) : (
+                        r.title
+                      )}
+                    </span>
+                    {r.submittedByName && (
+                      <span className="font-label text-xs uppercase tracking-widest text-on-surface-variant">
+                        by {r.submittedByName}
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-label text-[10px] uppercase tracking-widest text-on-tertiary-container bg-tertiary-container px-3 py-1">
+                    {REQUEST_STATUS_LABEL[r.status]}
+                  </span>
+                </div>
+                {r.summary && <p className="font-body text-sm text-on-surface-variant">{r.summary}</p>}
+                {r.status === 'declined' && r.declineReason && (
+                  <p className="font-body text-sm text-on-surface-variant">Reason: {r.declineReason}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Invite (admins only) */}
       {isAdmin && (

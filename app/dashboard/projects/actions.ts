@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
-import { requireRole } from '@/lib/auth/session'
+import { requireProfile, requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import { projects, projectAssignments, projectInterests } from '@/lib/db/schema'
 import {
@@ -10,6 +10,7 @@ import {
   getDefaultHubId,
   type ProjectStatus,
 } from '@/lib/platform/projects'
+import { getPrimaryOrgForUser, isOrgAdmin } from '@/lib/platform/credits'
 import { parseTags } from '@/lib/platform/apprentice-fields'
 import { PROJECT_LINK_FIELDS } from '@/lib/platform/project-fields'
 
@@ -63,6 +64,30 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
     .values({ title, organizationId, hubId, createdBy: me.id, ...parseProjectFields(formData) })
     .returning({ id: projects.id })
 
+  revalidatePath('/dashboard/projects')
+  return { ok: true, id: proj.id }
+}
+
+// Org admin (or staff): create a project for the acting user's own organization
+// (starts in 'intake'). The org is server-derived — never taken from the form.
+export async function createOrgProject(formData: FormData): Promise<ActionResult> {
+  const me = await requireProfile()
+  const org = await getPrimaryOrgForUser(me.id)
+  if (!org) return { ok: false, error: 'You’re not part of an organization yet.' }
+  const allowed = me.role === 'hub_staff' || (await isOrgAdmin(me.id, org.orgId))
+  if (!allowed) return { ok: false, error: 'Only organization admins can create projects.' }
+
+  const title = String(formData.get('title') ?? '').trim()
+  if (!title) return { ok: false, error: 'A project title is required.' }
+
+  const db = getDb()
+  const hubId = await getDefaultHubId()
+  const [proj] = await db
+    .insert(projects)
+    .values({ organizationId: org.orgId, title, hubId, createdBy: me.id, ...parseProjectFields(formData) })
+    .returning({ id: projects.id })
+
+  revalidatePath('/dashboard/organization')
   revalidatePath('/dashboard/projects')
   return { ok: true, id: proj.id }
 }

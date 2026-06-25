@@ -24,10 +24,14 @@ export function ProjectFieldInputs({
   organizations,
   project,
   disabled,
+  hideOrg,
 }: {
   organizations: OrgOption[]
   project?: ProjectFieldDefaults
   disabled?: boolean
+  // When true, omit the organization selector (the org is fixed server-side,
+  // e.g. an org admin creating a project for their own org).
+  hideOrg?: boolean
 }) {
   const links = (project?.links ?? {}) as Record<string, string>
   return (
@@ -39,20 +43,22 @@ export function ProjectFieldInputs({
         <input id="title" name="title" required defaultValue={project?.title ?? ''} placeholder="What's the project?" disabled={disabled} className={inputClass} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="organizationId" className={labelClass}>
-            Organization
-          </label>
-          <select id="organizationId" name="organizationId" defaultValue={project?.organizationId ?? ''} disabled={disabled} className={inputClass}>
-            <option value="">Unassigned</option>
-            {organizations.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className={`grid gap-4 ${hideOrg ? '' : 'sm:grid-cols-2'}`}>
+        {!hideOrg && (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="organizationId" className={labelClass}>
+              Organization
+            </label>
+            <select id="organizationId" name="organizationId" defaultValue={project?.organizationId ?? ''} disabled={disabled} className={inputClass}>
+              <option value="">Unassigned</option>
+              {organizations.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <label htmlFor="estimatedCredits" className={labelClass}>
             Estimated credits
