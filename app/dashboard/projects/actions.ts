@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
 import { requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
-import { projects, projectAssignments } from '@/lib/db/schema'
+import { projects, projectAssignments, projectInterests } from '@/lib/db/schema'
 import {
   PROJECT_STATUSES,
   getDefaultHubId,
@@ -83,12 +83,70 @@ export async function assignApprentice(projectId: string, formData: FormData): P
   return { ok: true }
 }
 
-// Staff-only: remove someone from the team.
-export async function removeAssignment(assignmentId: string, projectId: string): Promise<ActionResult> {
+// Staff-only: remove someone from the team, capturing why. Soft-remove (keep the
+// row, mark it 'removed' with the reason) so the decision is on the record and
+// the person can be re-added later.
+export async function removeAssignment(
+  assignmentId: string,
+  projectId: string,
+  reason: string,
+): Promise<ActionResult> {
+  await requireRole('hub_staff')
+
+  const trimmed = reason.trim()
+  if (!trimmed) return { ok: false, error: 'A reason for removing them is required.' }
+
+  const db = getDb()
+  await db
+    .update(projectAssignments)
+    .set({ status: 'removed', removalReason: trimmed })
+    .where(eq(projectAssignments.id, assignmentId))
+  revalidatePath(`/dashboard/projects/${projectId}`)
+  return { ok: true }
+}
+
+// Staff-only: add an interested apprentice to the team and mark their interest
+// accepted (re-activates a prior soft-removed assignment if one exists).
+export async function addInterestedToTeam(projectId: string, userId: string): Promise<ActionResult> {
+  await requireRole('hub_staff')
+  if (!userId) return { ok: false, error: 'Missing apprentice.' }
+
+  const db = getDb()
+  const existing = await db
+    .select({ id: projectAssignments.id })
+    .from(projectAssignments)
+    .where(and(eq(projectAssignments.projectId, projectId), eq(projectAssignments.userId, userId)))
+    .limit(1)
+
+  if (existing[0]) {
+    await db
+      .update(projectAssignments)
+      .set({ status: 'active', removalReason: null })
+      .where(eq(projectAssignments.id, existing[0].id))
+  } else {
+    await db.insert(projectAssignments).values({ projectId, userId, roleOnProject: 'member' })
+  }
+
+  await db
+    .update(projectInterests)
+    .set({ status: 'accepted' })
+    .where(and(eq(projectInterests.projectId, projectId), eq(projectInterests.userId, userId)))
+
+  revalidatePath(`/dashboard/projects/${projectId}`)
+  revalidatePath('/dashboard/opportunities')
+  return { ok: true }
+}
+
+// Staff-only: pass on an apprentice's interest (without adding them).
+export async function declineInterest(projectId: string, userId: string): Promise<ActionResult> {
   await requireRole('hub_staff')
 
   const db = getDb()
-  await db.delete(projectAssignments).where(eq(projectAssignments.id, assignmentId))
+  await db
+    .update(projectInterests)
+    .set({ status: 'declined' })
+    .where(and(eq(projectInterests.projectId, projectId), eq(projectInterests.userId, userId)))
   revalidatePath(`/dashboard/projects/${projectId}`)
+  revalidatePath('/dashboard/opportunities')
   return { ok: true }
 }

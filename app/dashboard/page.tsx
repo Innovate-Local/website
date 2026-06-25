@@ -66,7 +66,12 @@ async function ApprenticeHome({ profile }: { profile: Profile }) {
       <section className="flex flex-col gap-4">
         <div className="flex items-end justify-between">
           <h2 className="font-headline text-2xl text-on-surface">Your projects</h2>
-          <QuickLinks links={[{ href: '/dashboard/resume', label: 'Manage resume' }]} />
+          <QuickLinks
+            links={[
+              { href: '/dashboard/opportunities', label: 'Find a project' },
+              { href: '/dashboard/resume', label: 'Manage resume' },
+            ]}
+          />
         </div>
         {projects.length === 0 ? (
           <p className="bg-surface-container-low p-8 font-body text-on-surface-variant">

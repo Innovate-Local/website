@@ -45,7 +45,13 @@ export function navForRole(role: UserRole): NavItem[] {
         profile,
       ]
     case 'apprentice':
-      return [home, projects, { href: '/dashboard/resume', label: 'Resume' }, profile]
+      return [
+        home,
+        projects,
+        { href: '/dashboard/opportunities', label: 'Opportunities' },
+        { href: '/dashboard/resume', label: 'Resume' },
+        profile,
+      ]
     case 'org_member':
     default:
       return [

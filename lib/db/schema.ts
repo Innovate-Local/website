@@ -173,11 +173,37 @@ export const projectAssignments = pgTable(
     userId: uuid('user_id').notNull(),
     roleOnProject: text('role_on_project').$type<'lead' | 'member'>().notNull().default('member'),
     status: text('status').$type<'active' | 'completed' | 'removed'>().notNull().default('active'),
+    removalReason: text('removal_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
     projectIdx: index('assignments_project_idx').on(t.projectId),
     userIdx: index('assignments_user_idx').on(t.userId),
+  }),
+)
+
+// project_interests — apprentices raising their hand to join a project; staff
+// review and decide. Mirrors
+// supabase/migrations/20260626130000_project_interests.sql.
+export const projectInterests = pgTable(
+  'project_interests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').notNull(),
+    message: text('message'),
+    status: text('status')
+      .$type<'interested' | 'withdrawn' | 'accepted' | 'declined'>()
+      .notNull()
+      .default('interested'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_interests_project_idx').on(t.projectId),
+    userIdx: index('project_interests_user_idx').on(t.userId),
   }),
 )
 
@@ -228,3 +254,5 @@ export type NewProject = typeof projects.$inferInsert
 export type ProjectAssignment = typeof projectAssignments.$inferSelect
 export type CreditTransaction = typeof creditTransactions.$inferSelect
 export type NewCreditTransaction = typeof creditTransactions.$inferInsert
+export type ProjectInterest = typeof projectInterests.$inferSelect
+export type NewProjectInterest = typeof projectInterests.$inferInsert

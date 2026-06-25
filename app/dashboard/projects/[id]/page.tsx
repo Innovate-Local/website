@@ -4,6 +4,7 @@ import { requireProfile, getUser } from '@/lib/auth/session'
 import {
   getProjectForUser,
   getProjectTeam,
+  getProjectInterests,
   listApprentices,
   PROJECT_STATUS_LABEL,
   type ProjectStatus,
@@ -12,6 +13,7 @@ import { getProjectCreditsSpent } from '@/lib/platform/credits'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { ProjectStatusControl } from '@/components/platform/ProjectStatusControl'
 import { ProjectTeam } from '@/components/platform/ProjectTeam'
+import { ProjectInterestList } from '@/components/platform/ProjectInterestList'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await requireProfile()
@@ -24,6 +26,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const team = await getProjectTeam(id)
   const creditsSpent = await getProjectCreditsSpent(id)
   const isStaff = profile.role === 'hub_staff'
+  const interests = isStaff ? await getProjectInterests(id) : []
 
   return (
     <div className="flex flex-col gap-10">
@@ -96,6 +99,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </ul>
         )}
       </section>
+
+      {/* Interested apprentices (staff only) */}
+      {isStaff && (
+        <section className="flex flex-col gap-4">
+          <h2 className="font-headline text-2xl text-on-surface">
+            Interested <span className="text-on-surface-variant">({interests.filter((i) => i.status === 'interested').length})</span>
+          </h2>
+          <ProjectInterestList projectId={project.id} interests={interests} />
+        </section>
+      )}
     </div>
   )
 }

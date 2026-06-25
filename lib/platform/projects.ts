@@ -2,11 +2,12 @@
 // delivered by an apprentice team). Server-only (Drizzle). Read access is
 // role-scoped here so pages and actions share one definition of "what can this
 // user see".
-import { and, desc, eq, inArray, sql, type SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne, notInArray, sql, type SQL } from 'drizzle-orm'
 import { getDb } from '@/lib/db'
 import {
   projects,
   projectAssignments,
+  projectInterests,
   organizations,
   organizationMembers,
   profiles,
@@ -15,6 +16,7 @@ import {
   type Project,
 } from '@/lib/db/schema'
 import { PROJECT_STATUSES, type ProjectStatus } from './project-status'
+import type { InterestStatus } from './interest-status'
 
 // Re-exported so server code can keep importing these from one place.
 export { PROJECT_STATUSES, PROJECT_STATUS_LABEL } from './project-status'
@@ -143,8 +145,87 @@ export async function getProjectTeam(projectId: string): Promise<TeamMember[]> {
     })
     .from(projectAssignments)
     .leftJoin(profiles, eq(profiles.id, projectAssignments.userId))
-    .where(eq(projectAssignments.projectId, projectId))
+    .where(and(eq(projectAssignments.projectId, projectId), ne(projectAssignments.status, 'removed')))
     .orderBy(projectAssignments.roleOnProject) // ascending: 'lead' before 'member'
+}
+
+// ---------------------------------------------------------------------------
+// Apprentice opportunities — projects open to join + expressed interest
+// ---------------------------------------------------------------------------
+const OPEN_STATUSES = ['intake', 'scoping', 'active'] as const
+
+export type OpenProjectItem = {
+  id: string
+  title: string
+  status: ProjectStatus
+  orgName: string | null
+  teamSize: number
+  interestStatus: InterestStatus | null
+}
+
+// Projects an apprentice could join: still open, and they're not already an
+// active team member. Carries the apprentice's own interest status (a withdrawn
+// row reads as null so they can raise their hand again).
+export async function listOpenProjectsForApprentice(userId: string): Promise<OpenProjectItem[]> {
+  const db = getDb()
+  const assignedToUser = db
+    .select({ id: projectAssignments.projectId })
+    .from(projectAssignments)
+    .where(and(eq(projectAssignments.userId, userId), ne(projectAssignments.status, 'removed')))
+
+  return db
+    .select({
+      id: projects.id,
+      title: projects.title,
+      status: sql<ProjectStatus>`${projects.status}`,
+      orgName: organizations.name,
+      teamSize: sql<number>`count(distinct ${projectAssignments.id}) filter (where ${projectAssignments.status} <> 'removed')::int`,
+      interestStatus: sql<InterestStatus | null>`(
+        select pi.status from ${projectInterests} pi
+        where pi.project_id = ${projects.id} and pi.user_id = ${userId} and pi.status <> 'withdrawn'
+        limit 1
+      )`,
+    })
+    .from(projects)
+    .leftJoin(organizations, eq(organizations.id, projects.organizationId))
+    .leftJoin(projectAssignments, eq(projectAssignments.projectId, projects.id))
+    .where(
+      and(
+        inArray(projects.status, OPEN_STATUSES as unknown as ProjectStatus[]),
+        notInArray(projects.id, assignedToUser),
+      ),
+    )
+    .groupBy(projects.id, organizations.name)
+    .orderBy(desc(projects.createdAt))
+}
+
+export type ProjectInterestRow = {
+  id: string
+  userId: string
+  status: InterestStatus
+  message: string | null
+  createdAt: Date
+  fullName: string | null
+  email: string | null
+}
+
+// Staff view: who has raised their hand for a project (withdrawn ones hidden).
+export async function getProjectInterests(projectId: string): Promise<ProjectInterestRow[]> {
+  const db = getDb()
+  return db
+    .select({
+      id: projectInterests.id,
+      userId: projectInterests.userId,
+      status: sql<InterestStatus>`${projectInterests.status}`,
+      message: projectInterests.message,
+      createdAt: projectInterests.createdAt,
+      fullName: profiles.fullName,
+      email: profiles.email,
+    })
+    .from(projectInterests)
+    .leftJoin(profiles, eq(profiles.id, projectInterests.userId))
+    .where(and(eq(projectInterests.projectId, projectId), ne(projectInterests.status, 'withdrawn')))
+    .orderBy(projectInterests.createdAt)
 }
 
 // Staff helpers for the create/assign UI.

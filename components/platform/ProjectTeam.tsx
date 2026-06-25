@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { assignApprentice, removeAssignment } from '@/app/dashboard/projects/actions'
-import { inputClass, primaryButtonClass } from './styles'
+import { inputClass, labelClass, primaryButtonClass } from './styles'
 import type { TeamMember } from '@/lib/platform/projects'
 
 type ApprenticeOption = { id: string; fullName: string | null; email: string | null }
@@ -22,6 +22,9 @@ export function ProjectTeam({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  // The member currently being removed (showing the reason prompt) + the reason.
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
 
   // Apprentices not already on the team.
   const onTeam = new Set(team.map((m) => m.userId))
@@ -38,13 +41,26 @@ export function ProjectTeam({
     })
   }
 
-  function onRemove(assignmentId: string) {
+  function startRemoving(assignmentId: string) {
+    setError(null)
+    setReason('')
+    setRemovingId(assignmentId)
+  }
+
+  function confirmRemove(assignmentId: string) {
+    if (!reason.trim()) {
+      setError('A reason for removing them is required.')
+      return
+    }
     setError(null)
     setBusyId(assignmentId)
     startTransition(async () => {
-      const result = await removeAssignment(assignmentId, projectId)
+      const result = await removeAssignment(assignmentId, projectId, reason)
       setBusyId(null)
-      if (!result.ok) setError(result.error)
+      if (result.ok) {
+        setRemovingId(null)
+        setReason('')
+      } else setError(result.error)
     })
   }
 
@@ -55,21 +71,62 @@ export function ProjectTeam({
       ) : (
         <ul className="flex flex-col gap-px bg-outline-variant/30 border border-outline-variant/30">
           {team.map((m) => (
-            <li key={m.id} className="bg-surface flex items-center justify-between gap-4 px-5 py-4">
-              <span className="flex flex-col min-w-0">
-                <span className="font-body text-on-surface truncate">{m.fullName || m.email || '—'}</span>
-                <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
-                  {m.roleOnProject}
+            <li key={m.id} className="bg-surface flex flex-col gap-3 px-5 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <span className="flex flex-col min-w-0">
+                  <span className="font-body text-on-surface truncate">{m.fullName || m.email || '—'}</span>
+                  <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">
+                    {m.roleOnProject}
+                  </span>
                 </span>
-              </span>
-              <button
-                type="button"
-                onClick={() => onRemove(m.id)}
-                disabled={busyId === m.id}
-                className="font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors disabled:opacity-60"
-              >
-                {busyId === m.id ? '…' : 'Remove'}
-              </button>
+                {removingId === m.id ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRemovingId(null)
+                      setError(null)
+                    }}
+                    className="font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => startRemoving(m.id)}
+                    disabled={busyId === m.id}
+                    className="font-label text-xs uppercase tracking-widest text-on-surface-variant hover:text-error transition-colors disabled:opacity-60"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+              {removingId === m.id && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="flex flex-grow flex-col gap-2">
+                    <label className={labelClass} htmlFor={`remove-reason-${m.id}`}>
+                      Why are they being removed?
+                    </label>
+                    <input
+                      id={`remove-reason-${m.id}`}
+                      value={reason}
+                      autoFocus
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g. capacity changed, reassigned to another project"
+                      disabled={busyId === m.id}
+                      className={inputClass}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => confirmRemove(m.id)}
+                    disabled={busyId === m.id}
+                    className="font-label text-xs uppercase tracking-widest bg-error text-on-error px-5 py-4 font-bold transition-colors disabled:opacity-60"
+                  >
+                    {busyId === m.id ? 'Removing…' : 'Confirm removal'}
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
