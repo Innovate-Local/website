@@ -8,7 +8,7 @@
 // ever drift — use it to verify, especially for `inquiries`, whose exact shape
 // lives only in the remote project today.)
 
-import { pgTable, uuid, text, jsonb, timestamp, integer, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, index } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
 // inquiries — existing table. Public contact forms (join/partner/members) are
@@ -207,6 +207,36 @@ export const projectInterests = pgTable(
   }),
 )
 
+// project_feedback — bidirectional feedback on a completed engagement (org rates
+// apprentices; apprentices reflect on the org). Generic by design — see
+// supabase/migrations/20260626140000_project_feedback.sql. Keep the unions in
+// sync with that file's CHECKs.
+export const projectFeedback = pgTable(
+  'project_feedback',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id'),
+    authorRole: text('author_role').$type<'apprentice' | 'org_member' | 'hub_staff'>().notNull(),
+    subjectType: text('subject_type').$type<'apprentice' | 'organization'>().notNull(),
+    subjectUserId: uuid('subject_user_id'),
+    subjectOrgId: uuid('subject_org_id').references(() => organizations.id, { onDelete: 'cascade' }),
+    rating: smallint('rating'),
+    comment: text('comment'),
+    metadata: jsonb('metadata').notNull().default({}),
+    status: text('status').$type<'submitted' | 'withdrawn'>().notNull().default('submitted'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_feedback_project_idx').on(t.projectId),
+    subjectUserIdx: index('project_feedback_subject_user_idx').on(t.subjectUserId),
+    subjectOrgIdx: index('project_feedback_subject_org_idx').on(t.subjectOrgId),
+  }),
+)
+
 // credit_transactions — the per-org Innovation Credits ledger. An org's
 // available balance is sum(delta) over its own rows. Mirrors
 // supabase/migrations/20260626120000_innovation_credits.sql; keep the `kind`
@@ -256,3 +286,5 @@ export type CreditTransaction = typeof creditTransactions.$inferSelect
 export type NewCreditTransaction = typeof creditTransactions.$inferInsert
 export type ProjectInterest = typeof projectInterests.$inferSelect
 export type NewProjectInterest = typeof projectInterests.$inferInsert
+export type ProjectFeedback = typeof projectFeedback.$inferSelect
+export type NewProjectFeedback = typeof projectFeedback.$inferInsert

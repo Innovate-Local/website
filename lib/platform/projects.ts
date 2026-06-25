@@ -207,9 +207,14 @@ export type ProjectInterestRow = {
   createdAt: Date
   fullName: string | null
   email: string | null
+  // Track-record signals for the staffing decision.
+  avgRating: number | null
+  completedProjects: number
 }
 
-// Staff view: who has raised their hand for a project (withdrawn ones hidden).
+// Staff view: who has raised their hand for a project (withdrawn ones hidden),
+// carrying each apprentice's rating + delivered-project count so staff can weigh
+// who to add.
 export async function getProjectInterests(projectId: string): Promise<ProjectInterestRow[]> {
   const db = getDb()
   return db
@@ -221,6 +226,16 @@ export async function getProjectInterests(projectId: string): Promise<ProjectInt
       createdAt: projectInterests.createdAt,
       fullName: profiles.fullName,
       email: profiles.email,
+      avgRating: sql<number | null>`(
+        select round(avg(f.rating), 1)::float from project_feedback f
+        where f.subject_user_id = ${projectInterests.userId}
+          and f.subject_type = 'apprentice' and f.status = 'submitted'
+      )`,
+      completedProjects: sql<number>`(
+        select count(distinct a.project_id)::int from project_assignments a
+        join projects pr on pr.id = a.project_id
+        where a.user_id = ${projectInterests.userId} and pr.status in ('delivered', 'closed')
+      )`,
     })
     .from(projectInterests)
     .leftJoin(profiles, eq(profiles.id, projectInterests.userId))

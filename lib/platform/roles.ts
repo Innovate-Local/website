@@ -49,6 +49,7 @@ export function navForRole(role: UserRole): NavItem[] {
         home,
         projects,
         { href: '/dashboard/opportunities', label: 'Opportunities' },
+        { href: '/dashboard/portfolio', label: 'Portfolio' },
         { href: '/dashboard/resume', label: 'Resume' },
         profile,
       ]

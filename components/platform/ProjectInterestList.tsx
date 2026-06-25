@@ -40,9 +40,15 @@ export function ProjectInterestList({
             <div className="flex flex-wrap items-start justify-between gap-4">
               <span className="flex min-w-0 flex-col">
                 <span className="font-body text-on-surface">{i.fullName || i.email || '—'}</span>
-                {i.fullName && i.email && (
-                  <span className="break-all font-label text-xs text-on-surface-variant">{i.email}</span>
-                )}
+                <span className="font-label text-xs text-on-surface-variant">
+                  {[
+                    i.avgRating != null ? `★ ${i.avgRating.toFixed(1)}` : null,
+                    `${i.completedProjects} delivered`,
+                    i.fullName ? i.email : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
               </span>
               {i.status === 'interested' ? (
                 <span className="flex items-center gap-3">

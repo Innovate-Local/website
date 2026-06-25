@@ -69,6 +69,7 @@ async function ApprenticeHome({ profile }: { profile: Profile }) {
           <QuickLinks
             links={[
               { href: '/dashboard/opportunities', label: 'Find a project' },
+              { href: '/dashboard/portfolio', label: 'Your portfolio' },
               { href: '/dashboard/resume', label: 'Manage resume' },
             ]}
           />

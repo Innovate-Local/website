@@ -10,10 +10,16 @@ import {
   type ProjectStatus,
 } from '@/lib/platform/projects'
 import { getProjectCreditsSpent } from '@/lib/platform/credits'
+import {
+  getMyProjectFeedback,
+  getProjectFeedbackForViewer,
+  isFeedbackOpen,
+} from '@/lib/platform/feedback'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { ProjectStatusControl } from '@/components/platform/ProjectStatusControl'
 import { ProjectTeam } from '@/components/platform/ProjectTeam'
 import { ProjectInterestList } from '@/components/platform/ProjectInterestList'
+import { ProjectFeedbackPanel } from '@/components/platform/ProjectFeedbackPanel'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const profile = await requireProfile()
@@ -27,6 +33,19 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const creditsSpent = await getProjectCreditsSpent(id)
   const isStaff = profile.role === 'hub_staff'
   const interests = isStaff ? await getProjectInterests(id) : []
+
+  // Feedback opens once the engagement is delivered/closed.
+  const feedbackOpen = isFeedbackOpen(project.status as ProjectStatus)
+  const myFeedback = feedbackOpen ? await getMyProjectFeedback(id, profile.id) : []
+  const visibleFeedback = feedbackOpen
+    ? await getProjectFeedbackForViewer(id, profile.role, profile.id)
+    : []
+  const myReflection = myFeedback.find((f) => f.subjectType === 'organization') ?? null
+  const myApprenticeRatings = Object.fromEntries(
+    myFeedback
+      .filter((f) => f.subjectType === 'apprentice' && f.subjectUserId)
+      .map((f) => [f.subjectUserId as string, { rating: f.rating, comment: f.comment }]),
+  )
 
   return (
     <div className="flex flex-col gap-10">
@@ -107,6 +126,23 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             Interested <span className="text-on-surface-variant">({interests.filter((i) => i.status === 'interested').length})</span>
           </h2>
           <ProjectInterestList projectId={project.id} interests={interests} />
+        </section>
+      )}
+
+      {/* Feedback — opens when the engagement is delivered/closed */}
+      {feedbackOpen && (
+        <section className="flex flex-col gap-4">
+          <h2 className="font-headline text-2xl text-on-surface">Feedback</h2>
+          <ProjectFeedbackPanel
+            projectId={project.id}
+            orgName={project.orgName}
+            canRate={isStaff || profile.role === 'org_member'}
+            canReflect={profile.role === 'apprentice'}
+            teamApprentices={team.map((m) => ({ userId: m.userId, name: m.fullName || m.email || '—' }))}
+            myApprenticeRatings={myApprenticeRatings}
+            myReflection={myReflection}
+            visibleFeedback={visibleFeedback}
+          />
         </section>
       )}
     </div>
