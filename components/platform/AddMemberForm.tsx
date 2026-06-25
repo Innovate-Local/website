@@ -9,18 +9,18 @@ export function AddMemberForm({ orgId }: { orgId: string }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState<string | null>(null)
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     setError(null)
-    setDone(false)
+    setDone(null)
     startTransition(async () => {
       const result = await addOrgMember(orgId, formData)
       if (result.ok) {
         formRef.current?.reset()
-        setDone(true)
+        setDone(result.invited ? 'Invite email sent' : 'Existing member added')
       } else {
         setError(result.error)
       }
@@ -39,7 +39,7 @@ export function AddMemberForm({ orgId }: { orgId: string }) {
             required
             placeholder="person@organization.org"
             disabled={isPending}
-            onChange={() => setDone(false)}
+            onChange={() => setDone(null)}
             className={inputClass}
           />
         </div>
@@ -58,7 +58,7 @@ export function AddMemberForm({ orgId }: { orgId: string }) {
         </div>
       )}
       {done && (
-        <span className="font-label text-xs uppercase tracking-widest text-primary">Member added</span>
+        <span className="font-label text-xs uppercase tracking-widest text-primary">{done}</span>
       )}
     </form>
   )

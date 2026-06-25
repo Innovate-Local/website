@@ -8,6 +8,7 @@ import { organizations, organizationMembers, profiles } from '@/lib/db/schema'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string }
+export type AddMemberResult = { ok: true; invited: boolean } | { ok: false; error: string }
 
 const ORG_TYPES = ['business', 'nonprofit', 'municipality', 'other'] as const
 const ORG_ROLES = ['owner', 'member'] as const
@@ -40,10 +41,11 @@ export async function createOrganization(formData: FormData): Promise<ActionResu
   return { ok: true, id: org.id }
 }
 
-// Staff-only: add a person to an organization by email. Creates the account if
-// it doesn't exist yet (they can magic-link in later), promotes them to
-// org_member unless they're already staff, and links them to the org.
-export async function addOrgMember(orgId: string, formData: FormData): Promise<ActionResult> {
+// Staff-only: add a person to an organization by email. If they have no account
+// yet, sends a Supabase invite email (they click through to sign in); existing
+// accounts are linked silently. Either way they're promoted to org_member
+// (unless already staff) and linked to the org.
+export async function addOrgMember(orgId: string, formData: FormData): Promise<AddMemberResult> {
   await requireRole('hub_staff')
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
@@ -56,15 +58,20 @@ export async function addOrgMember(orgId: string, formData: FormData): Promise<A
 
   const db = getDb()
 
-  // Find the account, creating it (service role) if needed — the signup trigger
-  // makes the matching profile row.
+  // Find the account; invite (which creates it) if it doesn't exist. The signup
+  // trigger makes the matching profile row on creation.
   let [profile] = await db.select().from(profiles).where(eq(profiles.email, email)).limit(1)
+  let invited = false
   if (!profile) {
     const admin = getSupabaseAdmin()
-    const { error } = await admin.auth.admin.createUser({ email, email_confirm: true })
-    if (error) return { ok: false, error: `Could not create account: ${error.message}` }
+    // No redirectTo: the Invite email template links straight to our app with a
+    // token_hash (see docs/database-migrations.md → auth), which the callback
+    // verifies. Invite also creates the auth user.
+    const { error } = await admin.auth.admin.inviteUserByEmail(email)
+    if (error) return { ok: false, error: `Could not send invite: ${error.message}` }
+    invited = true
     ;[profile] = await db.select().from(profiles).where(eq(profiles.email, email)).limit(1)
-    if (!profile) return { ok: false, error: 'Account created but profile not found — try again.' }
+    if (!profile) return { ok: false, error: 'Invite sent but profile not found — try again.' }
   }
 
   // Promote to org_member unless already staff (don't demote staff).
@@ -89,5 +96,5 @@ export async function addOrgMember(orgId: string, formData: FormData): Promise<A
   }
 
   revalidatePath(`/dashboard/organizations/${orgId}`)
-  return { ok: true }
+  return { ok: true, invited }
 }
