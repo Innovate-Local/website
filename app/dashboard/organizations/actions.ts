@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
-import { requireRole } from '@/lib/auth/session'
+import { requireProfile, requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import { organizations, organizationMembers, profiles } from '@/lib/db/schema'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
@@ -11,7 +11,31 @@ export type ActionResult = { ok: true; id?: string } | { ok: false; error: strin
 export type AddMemberResult = { ok: true; invited: boolean } | { ok: false; error: string }
 
 const ORG_TYPES = ['business', 'nonprofit', 'municipality', 'other'] as const
-const ORG_ROLES = ['owner', 'member'] as const
+const ORG_ROLES = ['admin', 'member'] as const
+
+// May the current user manage this org's people — hub staff, or an admin of the
+// org itself. Returns the profile (used as authorizedBy etc.) or null.
+async function orgManager(orgId: string): Promise<{ id: string } | null> {
+  const profile = await requireProfile()
+  if (profile.role === 'hub_staff') return profile
+  const db = getDb()
+  const [m] = await db
+    .select({ role: organizationMembers.roleInOrg })
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, profile.id)))
+    .limit(1)
+  return m?.role === 'admin' ? profile : null
+}
+
+// Count of admins on an org — used to prevent removing the last one (lockout).
+async function adminCount(orgId: string): Promise<number> {
+  const db = getDb()
+  const rows = await db
+    .select({ id: organizationMembers.id })
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.roleInOrg, 'admin')))
+  return rows.length
+}
 
 // Staff-only: create an organization.
 export async function createOrganization(formData: FormData): Promise<ActionResult> {
@@ -41,12 +65,12 @@ export async function createOrganization(formData: FormData): Promise<ActionResu
   return { ok: true, id: org.id }
 }
 
-// Staff-only: add a person to an organization by email. If they have no account
-// yet, sends a Supabase invite email (they click through to sign in); existing
-// accounts are linked silently. Either way they're promoted to org_member
-// (unless already staff) and linked to the org.
+// Staff or org admin: add a person to an organization by email. If they have no
+// account yet, sends a Supabase invite email (they click through to sign in);
+// existing accounts are linked silently. Either way they're promoted to
+// org_member (unless already staff) and linked to the org.
 export async function addOrgMember(orgId: string, formData: FormData): Promise<AddMemberResult> {
-  await requireRole('hub_staff')
+  if (!(await orgManager(orgId))) return { ok: false, error: 'Not allowed.' }
 
   const email = String(formData.get('email') ?? '').trim().toLowerCase()
   if (!email.includes('@')) return { ok: false, error: 'Enter a valid email address.' }
@@ -96,5 +120,60 @@ export async function addOrgMember(orgId: string, formData: FormData): Promise<A
   }
 
   revalidatePath(`/dashboard/organizations/${orgId}`)
+  revalidatePath('/dashboard/organization')
   return { ok: true, invited }
+}
+
+// Staff or org admin: change a member's in-org role. Guards against demoting the
+// last admin (which would lock the org out of managing itself).
+export async function setMemberRole(
+  orgId: string,
+  membershipId: string,
+  role: string,
+): Promise<ActionResult> {
+  if (!(await orgManager(orgId))) return { ok: false, error: 'Not allowed.' }
+  const roleInOrg = (ORG_ROLES as readonly string[]).includes(role)
+    ? (role as (typeof ORG_ROLES)[number])
+    : null
+  if (!roleInOrg) return { ok: false, error: 'Invalid role.' }
+
+  const db = getDb()
+  const [member] = await db
+    .select({ role: organizationMembers.roleInOrg })
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.orgId, orgId)))
+    .limit(1)
+  if (!member) return { ok: false, error: 'Member not found.' }
+
+  if (member.role === 'admin' && roleInOrg === 'member' && (await adminCount(orgId)) <= 1) {
+    return { ok: false, error: 'An organization needs at least one admin.' }
+  }
+
+  await db.update(organizationMembers).set({ roleInOrg }).where(eq(organizationMembers.id, membershipId))
+  revalidatePath(`/dashboard/organizations/${orgId}`)
+  revalidatePath('/dashboard/organization')
+  return { ok: true }
+}
+
+// Staff or org admin: remove a member from the organization (the account and its
+// profile are untouched — only the membership link is dropped).
+export async function removeMember(orgId: string, membershipId: string): Promise<ActionResult> {
+  if (!(await orgManager(orgId))) return { ok: false, error: 'Not allowed.' }
+
+  const db = getDb()
+  const [member] = await db
+    .select({ role: organizationMembers.roleInOrg })
+    .from(organizationMembers)
+    .where(and(eq(organizationMembers.id, membershipId), eq(organizationMembers.orgId, orgId)))
+    .limit(1)
+  if (!member) return { ok: false, error: 'Member not found.' }
+
+  if (member.role === 'admin' && (await adminCount(orgId)) <= 1) {
+    return { ok: false, error: 'Remove the last admin by promoting another member first.' }
+  }
+
+  await db.delete(organizationMembers).where(eq(organizationMembers.id, membershipId))
+  revalidatePath(`/dashboard/organizations/${orgId}`)
+  revalidatePath('/dashboard/organization')
+  return { ok: true }
 }

@@ -15,6 +15,15 @@ export const ROLE_TAGLINE: Record<UserRole, string> = {
   hub_staff: 'Run the hub.',
 }
 
+// In-org hierarchy (organization_members.role_in_org). Admins manage the team
+// and move credits; members have read access and can propose.
+export type OrgRole = 'admin' | 'member'
+export const ORG_ROLES: OrgRole[] = ['admin', 'member']
+export const ORG_ROLE_LABEL: Record<OrgRole, string> = {
+  admin: 'Admin',
+  member: 'Member',
+}
+
 export type NavItem = { href: string; label: string }
 
 // Navigation destinations per role. Home + Profile are universal; role-specific
@@ -30,6 +39,7 @@ export function navForRole(role: UserRole): NavItem[] {
       return [
         home,
         projects,
+        { href: '/dashboard/credits', label: 'Credits' },
         { href: '/dashboard/people', label: 'People' },
         { href: '/dashboard/organizations', label: 'Organizations' },
         profile,
@@ -38,6 +48,12 @@ export function navForRole(role: UserRole): NavItem[] {
       return [home, projects, { href: '/dashboard/resume', label: 'Resume' }, profile]
     case 'org_member':
     default:
-      return [home, projects, profile]
+      return [
+        home,
+        { href: '/dashboard/organization', label: 'Organization' },
+        { href: '/dashboard/credits', label: 'Credits' },
+        projects,
+        profile,
+      ]
   }
 }

@@ -127,7 +127,7 @@ export const organizationMembers = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: 'cascade' }),
     userId: uuid('user_id').notNull(),
-    roleInOrg: text('role_in_org').$type<'owner' | 'member'>().notNull().default('member'),
+    roleInOrg: text('role_in_org').$type<'admin' | 'member'>().notNull().default('member'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
@@ -181,6 +181,37 @@ export const projectAssignments = pgTable(
   }),
 )
 
+// credit_transactions — the per-org Innovation Credits ledger. An org's
+// available balance is sum(delta) over its own rows. Mirrors
+// supabase/migrations/20260626120000_innovation_credits.sql; keep the `kind`
+// union in sync with that file's CHECK.
+export const creditTransactions = pgTable(
+  'credit_transactions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    counterpartyOrgId: uuid('counterparty_org_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    kind: text('kind')
+      .$type<'grant' | 'transfer_out' | 'transfer_in' | 'spend' | 'reclaim'>()
+      .notNull(),
+    delta: integer('delta').notNull(),
+    engagementType: text('engagement_type'),
+    note: text('note'),
+    authorizedBy: uuid('authorized_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index('credit_tx_org_idx').on(t.orgId),
+    projectIdx: index('credit_tx_project_idx').on(t.projectId),
+    createdIdx: index('credit_tx_created_idx').on(t.createdAt),
+  }),
+)
+
 // Inferred row types for use across the app.
 export type Inquiry = typeof inquiries.$inferSelect
 export type Student = typeof students.$inferSelect
@@ -195,3 +226,5 @@ export type OrganizationMember = typeof organizationMembers.$inferSelect
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
 export type ProjectAssignment = typeof projectAssignments.$inferSelect
+export type CreditTransaction = typeof creditTransactions.$inferSelect
+export type NewCreditTransaction = typeof creditTransactions.$inferInsert

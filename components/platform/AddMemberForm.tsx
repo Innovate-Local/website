@@ -45,7 +45,7 @@ export function AddMemberForm({ orgId }: { orgId: string }) {
         </div>
         <select name="roleInOrg" defaultValue="member" disabled={isPending} className={`${inputClass} sm:w-40`}>
           <option value="member">Member</option>
-          <option value="owner">Owner</option>
+          <option value="admin">Admin</option>
         </select>
         <button type="submit" disabled={isPending} className={primaryButtonClass}>
           {isPending ? 'Adding...' : 'Add'}

@@ -8,6 +8,7 @@ import {
   PROJECT_STATUS_LABEL,
   type ProjectStatus,
 } from '@/lib/platform/projects'
+import { getProjectCreditsSpent } from '@/lib/platform/credits'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { ProjectStatusControl } from '@/components/platform/ProjectStatusControl'
 import { ProjectTeam } from '@/components/platform/ProjectTeam'
@@ -21,6 +22,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) notFound()
 
   const team = await getProjectTeam(id)
+  const creditsSpent = await getProjectCreditsSpent(id)
   const isStaff = profile.role === 'hub_staff'
 
   return (
@@ -47,6 +49,21 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             {PROJECT_STATUS_LABEL[project.status as ProjectStatus]}
           </span>
         )}
+      </section>
+
+      {/* Credits committed */}
+      <section className="flex flex-col gap-3">
+        <h2 className="font-headline text-2xl text-on-surface">Credits committed</h2>
+        <p className="font-body text-on-surface-variant">
+          {creditsSpent > 0 ? (
+            <>
+              <span className="font-semibold text-on-surface tabular-nums">{creditsSpent}</span> credits
+              spent on this project.
+            </>
+          ) : (
+            'No credits committed to this project yet.'
+          )}
+        </p>
       </section>
 
       {/* Problem statement */}
