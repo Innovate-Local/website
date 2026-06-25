@@ -337,11 +337,23 @@ link · **D4 → literal `/dashboard` segment, marketing tree untouched** · D5 
   `requireProfile`/`requireRole`); `app/dashboard` layout + role-routed home +
   profile view/edit; reusable `components/platform/*` shell.
 
-**Remaining:**
-- Phase 4 — provisioning UI: staff-only role assignment + org/member invites
-  (signup→default-apprentice already works via trigger).
-- Phase 5 — bridge `students`/`resumes` to accounts (owner-scoped RLS +
-  Storage policy matching the `{student.id}/…` path scheme).
+**Done (Phases 4–5) — typechecks + build green, migrations applied:**
+- Phase 4 — staff console: `/dashboard/people` (list + inline role change),
+  `/dashboard/organizations` (list + create) and `/dashboard/organizations/[id]`
+  (members + add/invite by email — creates the account via service role if new).
+  Staff-only via `requireRole('hub_staff')`; nav extended in `navForRole`.
+- Phase 5 — `/dashboard/resume`: apprentices link their pre-existing `students`
+  row (by email), upload resumes, and download via short-lived signed URLs minted
+  server-side after an ownership check. Owner/staff RLS on `students`/`resumes`
+  added in `20260626000000_apprentice_data_rls.sql`. Shared resume logic factored
+  into `lib/platform/resumes.ts` (also used by the public intake route).
+
+**Remaining (next slices, not foundation):**
+- Projects: intake → scoping → team assignment → delivery (the core workflow on
+  top of the `projects`/`project_assignments` tables).
+- Org-member portal (submit problems, follow projects) and apprentice project
+  views.
+- Tier/credit/partner features.
 
 ### Bring it live
 - **Migration: APPLIED ✅** — `20260625120000_platform_foundation.sql` is live in

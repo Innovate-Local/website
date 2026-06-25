@@ -3,24 +3,33 @@ import { requireProfile } from '@/lib/auth/session'
 import { ROLE_TAGLINE } from '@/lib/platform/roles'
 import type { UserRole } from '@/lib/db/schema'
 
-// Role-routed home. For the foundation each role lands on a tailored welcome;
-// the role-specific tools (projects, organizations, people) attach here as those
-// slices ship. Adding a role = adding an entry to ROLE_HOME.
-const ROLE_HOME: Record<UserRole, { heading: string; blurb: string }> = {
+// Role-routed home. For the foundation each role lands on a tailored welcome
+// plus quick links to its tools. Adding a role = adding an entry to ROLE_HOME.
+type HomeLink = { href: string; label: string }
+const ROLE_HOME: Record<UserRole, { heading: string; blurb: string; links: HomeLink[] }> = {
   apprentice: {
     heading: 'Your apprentice workspace',
     blurb:
-      'This is where your profile, resume, and project assignments will live. Keep your profile current so hub staff can match you to the right work.',
+      'Keep your profile and resume current so hub staff can match you to the right project work.',
+    links: [
+      { href: '/dashboard/resume', label: 'Manage your resume' },
+      { href: '/dashboard/profile', label: 'Edit your profile' },
+    ],
   },
   org_member: {
     heading: 'Your organization’s workspace',
     blurb:
       'This is where you’ll submit problems, follow the projects your hub team is running for you, and reach your hub contacts.',
+    links: [{ href: '/dashboard/profile', label: 'Edit your profile' }],
   },
   hub_staff: {
     heading: 'Hub operations',
     blurb:
-      'This is where you’ll turn inquiries into scoped projects, assign apprentice teams, and track engagements to delivery.',
+      'Manage accounts and organizations here. Turning inquiries into scoped projects and assigning apprentice teams comes next.',
+    links: [
+      { href: '/dashboard/people', label: 'Manage people' },
+      { href: '/dashboard/organizations', label: 'Manage organizations' },
+    ],
   },
 }
 
@@ -41,12 +50,17 @@ export default async function DashboardHome() {
       <section className="bg-surface-container-low p-8 md:p-10 flex flex-col gap-4">
         <h2 className="font-headline text-2xl text-on-surface">{home.heading}</h2>
         <p className="font-body text-on-surface-variant leading-relaxed">{home.blurb}</p>
-        <Link
-          href="/dashboard/profile"
-          className="self-start mt-2 font-label text-xs uppercase tracking-widest text-primary hover:text-primary-container transition-colors"
-        >
-          Review your profile →
-        </Link>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+          {home.links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className="font-label text-xs uppercase tracking-widest text-primary hover:text-primary-container transition-colors"
+            >
+              {l.label} →
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   )

@@ -17,13 +17,24 @@ export const ROLE_TAGLINE: Record<UserRole, string> = {
 
 export type NavItem = { href: string; label: string }
 
-// Navigation destinations per role. Today the platform ships the shared
-// foundation, so every role gets Home + Profile; role-specific destinations
-// (Projects, Organizations, People, …) get added here as those slices land.
+// Navigation destinations per role. Home + Profile are universal; role-specific
+// destinations slot in between. Extend the per-role arrays as new slices land.
 export function navForRole(role: UserRole): NavItem[] {
-  const base: NavItem[] = [
-    { href: '/dashboard', label: 'Home' },
-    { href: '/dashboard/profile', label: 'Profile' },
-  ]
-  return base
+  const home: NavItem = { href: '/dashboard', label: 'Home' }
+  const profile: NavItem = { href: '/dashboard/profile', label: 'Profile' }
+
+  switch (role) {
+    case 'hub_staff':
+      return [
+        home,
+        { href: '/dashboard/people', label: 'People' },
+        { href: '/dashboard/organizations', label: 'Organizations' },
+        profile,
+      ]
+    case 'apprentice':
+      return [home, { href: '/dashboard/resume', label: 'Resume' }, profile]
+    case 'org_member':
+    default:
+      return [home, profile]
+  }
 }
