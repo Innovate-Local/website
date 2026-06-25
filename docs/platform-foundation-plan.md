@@ -348,11 +348,20 @@ link · **D4 → literal `/dashboard` segment, marketing tree untouched** · D5 
   added in `20260626000000_apprentice_data_rls.sql`. Shared resume logic factored
   into `lib/platform/resumes.ts` (also used by the public intake route).
 
-**Remaining (next slices, not foundation):**
-- Projects: intake → scoping → team assignment → delivery (the core workflow on
-  top of the `projects`/`project_assignments` tables).
-- Org-member portal (submit problems, follow projects) and apprentice project
-  views.
+**Done — Projects workflow (the core loop) — build green:**
+- `/dashboard/projects` (role-aware list) + `/dashboard/projects/[id]` (detail).
+  Staff create projects, set status (intake→scoping→active→delivered→closed),
+  and manage the apprentice team (assign/remove, lead/member). Apprentices see
+  projects they're assigned to; org members see their org's projects — both
+  read-only. Access scoped in `lib/platform/projects.ts`
+  (`visibilityFilter`/`getProjectForUser`); pure status constants split into
+  `lib/platform/project-status.ts` so client components don't pull in the DB
+  client.
+
+**Remaining (next slices):**
+- Org-member self-submission of problems (create a project in `intake` for their
+  own org) and richer org/apprentice project detail.
+- Project notes/activity, deliverables, dates.
 - Tier/credit/partner features.
 
 ### Bring it live

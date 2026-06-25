@@ -23,18 +23,21 @@ export function navForRole(role: UserRole): NavItem[] {
   const home: NavItem = { href: '/dashboard', label: 'Home' }
   const profile: NavItem = { href: '/dashboard/profile', label: 'Profile' }
 
+  const projects: NavItem = { href: '/dashboard/projects', label: 'Projects' }
+
   switch (role) {
     case 'hub_staff':
       return [
         home,
+        projects,
         { href: '/dashboard/people', label: 'People' },
         { href: '/dashboard/organizations', label: 'Organizations' },
         profile,
       ]
     case 'apprentice':
-      return [home, { href: '/dashboard/resume', label: 'Resume' }, profile]
+      return [home, projects, { href: '/dashboard/resume', label: 'Resume' }, profile]
     case 'org_member':
     default:
-      return [home, profile]
+      return [home, projects, profile]
   }
 }

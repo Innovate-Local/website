@@ -10,23 +10,24 @@ const ROLE_HOME: Record<UserRole, { heading: string; blurb: string; links: HomeL
   apprentice: {
     heading: 'Your apprentice workspace',
     blurb:
-      'Keep your profile and resume current so hub staff can match you to the right project work.',
+      'Keep your profile and resume current, and follow the projects you’re assigned to.',
     links: [
+      { href: '/dashboard/projects', label: 'Your projects' },
       { href: '/dashboard/resume', label: 'Manage your resume' },
-      { href: '/dashboard/profile', label: 'Edit your profile' },
     ],
   },
   org_member: {
     heading: 'Your organization’s workspace',
     blurb:
-      'This is where you’ll submit problems, follow the projects your hub team is running for you, and reach your hub contacts.',
-    links: [{ href: '/dashboard/profile', label: 'Edit your profile' }],
+      'Follow the projects your hub team is running for your organization.',
+    links: [{ href: '/dashboard/projects', label: 'Your projects' }],
   },
   hub_staff: {
     heading: 'Hub operations',
     blurb:
-      'Manage accounts and organizations here. Turning inquiries into scoped projects and assigning apprentice teams comes next.',
+      'Scope projects from organizations, assign apprentice teams, and move engagements through to delivery.',
     links: [
+      { href: '/dashboard/projects', label: 'Manage projects' },
       { href: '/dashboard/people', label: 'Manage people' },
       { href: '/dashboard/organizations', label: 'Manage organizations' },
     ],
