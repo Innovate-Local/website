@@ -10,10 +10,42 @@ import {
   getDefaultHubId,
   type ProjectStatus,
 } from '@/lib/platform/projects'
+import { parseTags } from '@/lib/platform/apprentice-fields'
+import { PROJECT_LINK_FIELDS } from '@/lib/platform/project-fields'
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string }
 
 const PROJECT_ROLES = ['lead', 'member'] as const
+
+function nullable(raw: FormDataEntryValue | null): string | null {
+  return String(raw ?? '').trim() || null
+}
+
+function parseIntOrNull(raw: FormDataEntryValue | null): number | null {
+  const s = String(raw ?? '').trim()
+  if (!s) return null
+  const n = Number(s)
+  return Number.isInteger(n) && n >= 0 ? n : null
+}
+
+// The editable scoping fields shared by create + update.
+function parseProjectFields(formData: FormData) {
+  const links: Record<string, string> = {}
+  for (const { key } of PROJECT_LINK_FIELDS) {
+    const v = nullable(formData.get(`link_${key}`))
+    if (v) links[key] = v
+  }
+  return {
+    summary: nullable(formData.get('summary')),
+    description: nullable(formData.get('description')),
+    problemStatement: nullable(formData.get('problemStatement')),
+    skillsNeeded: parseTags(String(formData.get('skillsNeeded') ?? '')),
+    startDate: nullable(formData.get('startDate')),
+    dueDate: nullable(formData.get('dueDate')),
+    estimatedCredits: parseIntOrNull(formData.get('estimatedCredits')),
+    links,
+  }
+}
 
 // Staff-only: create a project (starts in 'intake').
 export async function createProject(formData: FormData): Promise<ActionResult> {
@@ -22,18 +54,39 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
   const title = String(formData.get('title') ?? '').trim()
   if (!title) return { ok: false, error: 'A project title is required.' }
 
-  const organizationId = String(formData.get('organizationId') ?? '').trim() || null
-  const problemStatement = String(formData.get('problemStatement') ?? '').trim() || null
+  const organizationId = nullable(formData.get('organizationId'))
   const hubId = await getDefaultHubId()
 
   const db = getDb()
   const [proj] = await db
     .insert(projects)
-    .values({ title, organizationId, problemStatement, hubId, createdBy: me.id })
+    .values({ title, organizationId, hubId, createdBy: me.id, ...parseProjectFields(formData) })
     .returning({ id: projects.id })
 
   revalidatePath('/dashboard/projects')
   return { ok: true, id: proj.id }
+}
+
+// Staff-only: edit a project's scoping detail.
+export async function updateProject(projectId: string, formData: FormData): Promise<ActionResult> {
+  await requireRole('hub_staff')
+
+  const title = String(formData.get('title') ?? '').trim()
+  if (!title) return { ok: false, error: 'A project title is required.' }
+
+  const db = getDb()
+  await db
+    .update(projects)
+    .set({
+      title,
+      organizationId: nullable(formData.get('organizationId')),
+      ...parseProjectFields(formData),
+    })
+    .where(eq(projects.id, projectId))
+
+  revalidatePath(`/dashboard/projects/${projectId}`)
+  revalidatePath('/dashboard/projects')
+  return { ok: true }
 }
 
 // Staff-only: move a project to a different status.

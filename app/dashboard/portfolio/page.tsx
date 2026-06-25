@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { requireRole } from '@/lib/auth/session'
 import { getApprenticeTrackRecord } from '@/lib/platform/feedback'
 import { ratingStars } from '@/lib/platform/feedback-types'
+import { getApprenticeProfile } from '@/lib/platform/apprentice-profile'
+import { AVAILABILITY_LABEL, LINK_FIELDS, type Availability } from '@/lib/platform/apprentice-fields'
 import { PROJECT_STATUS_LABEL } from '@/lib/platform/project-status'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { Metric, MetricGrid } from '@/components/platform/Metric'
@@ -10,11 +12,64 @@ import { Metric, MetricGrid } from '@/components/platform/Metric'
 // committed to them, and the ratings they've earned. Grows as feedback comes in.
 export default async function PortfolioPage() {
   const me = await requireRole('apprentice')
-  const record = await getApprenticeTrackRecord(me.id)
+  const [record, profile] = await Promise.all([
+    getApprenticeTrackRecord(me.id),
+    getApprenticeProfile(me.id),
+  ])
+  const links = (profile?.links ?? {}) as Record<string, string>
 
   return (
     <div className="flex flex-col gap-10">
       <PageHeader eyebrow="Track record" title="Your portfolio" />
+
+      {/* Profile summary */}
+      <section className="flex flex-col gap-4 bg-surface-container-low p-6 md:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-col gap-1">
+            <span className="font-headline text-2xl text-on-surface">{me.fullName || 'Your profile'}</span>
+            {profile?.headline && <span className="font-body text-on-surface-variant">{profile.headline}</span>}
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {profile?.availability && (
+              <span className="font-label text-[10px] uppercase tracking-widest text-on-tertiary-container bg-tertiary-container px-3 py-1">
+                {AVAILABILITY_LABEL[profile.availability as Availability]}
+                {profile.hoursPerWeek ? ` · ${profile.hoursPerWeek}h/wk` : ''}
+              </span>
+            )}
+            <Link href="/dashboard/profile" className="font-label text-xs uppercase tracking-widest text-primary hover:text-primary-container transition-colors">
+              Edit profile →
+            </Link>
+          </div>
+        </div>
+        {profile?.bio && <p className="max-w-2xl font-body text-on-surface-variant">{profile.bio}</p>}
+        {profile && profile.skills.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {profile.skills.map((s) => (
+              <span key={s} className="bg-surface-container-high px-3 py-1 font-label text-[10px] uppercase tracking-wider text-on-surface-variant">
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
+        {Object.keys(links).length > 0 && (
+          <div className="flex flex-wrap gap-x-5 gap-y-1">
+            {LINK_FIELDS.filter((l) => links[l.key]).map((l) => (
+              <a key={l.key} href={links[l.key]} target="_blank" rel="noreferrer" className="font-label text-xs uppercase tracking-widest text-primary hover:text-primary-container transition-colors">
+                {l.label} ↗
+              </a>
+            ))}
+          </div>
+        )}
+        {!profile && (
+          <p className="font-body text-on-surface-variant">
+            Add your skills and availability on your{' '}
+            <Link href="/dashboard/profile" className="text-primary hover:text-primary-container">
+              profile
+            </Link>{' '}
+            so the hub can match you to projects.
+          </p>
+        )}
+      </section>
 
       <MetricGrid>
         <Metric tone="primary" label="Projects delivered" value={record.completedCount} sub="Completed engagements" />

@@ -23,11 +23,14 @@ export function Metric({
   tone?: 'default' | 'primary'
 }) {
   const primary = tone === 'primary'
+  // NOTE: no `/NN` alpha modifiers on these var()-based hex tokens — Tailwind v3
+  // compiles them to invalid `rgb(#hex / .7)` and the colour is dropped (which
+  // made the label render near-black on the dark box). Use solid tokens instead.
   return (
     <div className={`flex flex-col gap-2 p-7 ${primary ? 'bg-inverse-surface' : 'bg-surface'}`}>
       <span
         className={`font-label text-xs font-semibold uppercase tracking-widest ${
-          primary ? 'text-inverse-on-surface/70' : 'text-on-surface-variant'
+          primary ? 'text-inverse-primary' : 'text-on-surface-variant'
         }`}
       >
         {label}
@@ -41,7 +44,7 @@ export function Metric({
       </span>
       {sub != null && (
         <span
-          className={`text-sm leading-snug ${primary ? 'text-inverse-on-surface/60' : 'text-on-surface-variant'}`}
+          className={`text-sm leading-snug ${primary ? 'text-inverse-on-surface' : 'text-on-surface-variant'}`}
         >
           {sub}
         </span>

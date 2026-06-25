@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createProject } from '@/app/dashboard/projects/actions'
-import { inputClass, labelClass, primaryButtonClass } from './styles'
+import { ProjectFieldInputs } from './ProjectFieldInputs'
+import { primaryButtonClass } from './styles'
 
 type OrgOption = { id: string; name: string }
 
@@ -38,26 +39,8 @@ export function CreateProjectForm({ organizations }: { organizations: OrgOption[
   }
 
   return (
-    <form onSubmit={onSubmit} className="bg-surface-container-low p-6 md:p-8 flex flex-col gap-5 w-full max-w-xl">
-      <div className="flex flex-col gap-2">
-        <label htmlFor="title" className={labelClass}>Title</label>
-        <input id="title" name="title" type="text" required placeholder="What's the project?" disabled={isPending} className={inputClass} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="organizationId" className={labelClass}>Organization</label>
-        <select id="organizationId" name="organizationId" disabled={isPending} className={inputClass} defaultValue="">
-          <option value="">Unassigned</option>
-          {organizations.map((o) => (
-            <option key={o.id} value={o.id}>{o.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="problemStatement" className={labelClass}>Problem statement</label>
-        <textarea id="problemStatement" name="problemStatement" rows={4} placeholder="The problem this project will solve." disabled={isPending} className={`${inputClass} resize-none`} />
-      </div>
+    <form onSubmit={onSubmit} className="bg-surface-container-low p-6 md:p-8 flex flex-col gap-5 w-full max-w-2xl">
+      <ProjectFieldInputs organizations={organizations} disabled={isPending} />
 
       {error && (
         <div className="bg-error-container text-on-error-container p-4">

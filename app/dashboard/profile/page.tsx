@@ -1,9 +1,12 @@
 import { requireProfile } from '@/lib/auth/session'
 import { ROLE_LABEL } from '@/lib/platform/roles'
+import { getApprenticeProfile } from '@/lib/platform/apprentice-profile'
 import { ProfileForm } from '@/components/platform/ProfileForm'
+import { ApprenticeProfileForm } from '@/components/platform/ApprenticeProfileForm'
 
 export default async function ProfilePage() {
   const profile = await requireProfile()
+  const apprenticeProfile = profile.role === 'apprentice' ? await getApprenticeProfile(profile.id) : null
 
   return (
     <div className="flex flex-col gap-10 max-w-3xl">
@@ -35,6 +38,19 @@ export default async function ProfilePage() {
         <h2 className="font-headline text-2xl text-on-surface">Edit details</h2>
         <ProfileForm fullName={profile.fullName} />
       </section>
+
+      {profile.role === 'apprentice' && (
+        <section className="flex flex-col gap-6 border-t border-outline-variant/30 pt-10">
+          <div className="flex flex-col gap-2">
+            <h2 className="font-headline text-2xl text-on-surface">Apprentice profile</h2>
+            <p className="font-body text-on-surface-variant">
+              Your skills and availability help the hub match you to projects, and show on your
+              portfolio.
+            </p>
+          </div>
+          <ApprenticeProfileForm profile={apprenticeProfile} />
+        </section>
+      )}
     </div>
   )
 }

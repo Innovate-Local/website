@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { addInterestedToTeam, declineInterest } from '@/app/dashboard/projects/actions'
 import { INTEREST_STATUS_LABEL } from '@/lib/platform/interest-status'
+import { AVAILABILITY_LABEL, type Availability } from '@/lib/platform/apprentice-fields'
 import type { ProjectInterestRow } from '@/lib/platform/projects'
 
 // Staff: apprentices who raised their hand for this project, with controls to
@@ -38,17 +39,27 @@ export function ProjectInterestList({
         {interests.map((i) => (
           <li key={i.id} className="flex flex-col gap-2 bg-surface px-5 py-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <span className="flex min-w-0 flex-col">
+              <span className="flex min-w-0 flex-col gap-1">
                 <span className="font-body text-on-surface">{i.fullName || i.email || '—'}</span>
                 <span className="font-label text-xs text-on-surface-variant">
                   {[
                     i.avgRating != null ? `★ ${i.avgRating.toFixed(1)}` : null,
                     `${i.completedProjects} delivered`,
+                    i.availability ? AVAILABILITY_LABEL[i.availability as Availability] : null,
                     i.fullName ? i.email : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
+                {i.skills.length > 0 && (
+                  <span className="mt-1 flex flex-wrap gap-1">
+                    {i.skills.slice(0, 8).map((s) => (
+                      <span key={s} className="bg-surface-container-high px-2 py-0.5 font-label text-[10px] uppercase tracking-wider text-on-surface-variant">
+                        {s}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </span>
               {i.status === 'interested' ? (
                 <span className="flex items-center gap-3">

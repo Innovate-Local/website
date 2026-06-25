@@ -8,7 +8,7 @@
 // ever drift — use it to verify, especially for `inquiries`, whose exact shape
 // lives only in the remote project today.)
 
-import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, date, index } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
 // inquiries — existing table. Public contact forms (join/partner/members) are
@@ -151,6 +151,14 @@ export const projects = pgTable(
       .$type<'intake' | 'scoping' | 'active' | 'delivered' | 'closed'>()
       .notNull()
       .default('intake'),
+    // Scoping detail (added 20260626150000).
+    summary: text('summary'),
+    description: text('description'),
+    skillsNeeded: text('skills_needed').array().notNull().default([]),
+    startDate: date('start_date'),
+    dueDate: date('due_date'),
+    estimatedCredits: integer('estimated_credits'),
+    links: jsonb('links').notNull().default({}),
     createdBy: uuid('created_by'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -179,6 +187,45 @@ export const projectAssignments = pgTable(
   (t) => ({
     projectIdx: index('assignments_project_idx').on(t.projectId),
     userIdx: index('assignments_user_idx').on(t.userId),
+  }),
+)
+
+// apprentice_profiles — the matching/portfolio detail for an apprentice account
+// (1:1). Mirrors supabase/migrations/20260626150000_*.
+export const apprenticeProfiles = pgTable('apprentice_profiles', {
+  userId: uuid('user_id').primaryKey(),
+  headline: text('headline'),
+  bio: text('bio'),
+  skills: text('skills').array().notNull().default([]),
+  availability: text('availability')
+    .$type<'available' | 'limited' | 'unavailable'>()
+    .notNull()
+    .default('available'),
+  hoursPerWeek: integer('hours_per_week'),
+  location: text('location'),
+  links: jsonb('links').notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// project_deliverables — the concrete pieces of work on a project.
+export const projectDeliverables = pgTable(
+  'project_deliverables',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    status: text('status').$type<'todo' | 'in_progress' | 'done'>().notNull().default('todo'),
+    dueDate: date('due_date'),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_deliverables_project_idx').on(t.projectId),
   }),
 )
 
@@ -288,3 +335,7 @@ export type ProjectInterest = typeof projectInterests.$inferSelect
 export type NewProjectInterest = typeof projectInterests.$inferInsert
 export type ProjectFeedback = typeof projectFeedback.$inferSelect
 export type NewProjectFeedback = typeof projectFeedback.$inferInsert
+export type ApprenticeProfile = typeof apprenticeProfiles.$inferSelect
+export type NewApprenticeProfile = typeof apprenticeProfiles.$inferInsert
+export type ProjectDeliverable = typeof projectDeliverables.$inferSelect
+export type NewProjectDeliverable = typeof projectDeliverables.$inferInsert

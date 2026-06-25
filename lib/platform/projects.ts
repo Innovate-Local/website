@@ -8,6 +8,7 @@ import {
   projects,
   projectAssignments,
   projectInterests,
+  apprenticeProfiles,
   organizations,
   organizationMembers,
   profiles,
@@ -88,6 +89,13 @@ export async function getProjectForUser(
       title: projects.title,
       problemStatement: projects.problemStatement,
       status: projects.status,
+      summary: projects.summary,
+      description: projects.description,
+      skillsNeeded: projects.skillsNeeded,
+      startDate: projects.startDate,
+      dueDate: projects.dueDate,
+      estimatedCredits: projects.estimatedCredits,
+      links: projects.links,
       createdBy: projects.createdBy,
       createdAt: projects.createdAt,
       updatedAt: projects.updatedAt,
@@ -210,6 +218,8 @@ export type ProjectInterestRow = {
   // Track-record signals for the staffing decision.
   avgRating: number | null
   completedProjects: number
+  skills: string[]
+  availability: string | null
 }
 
 // Staff view: who has raised their hand for a project (withdrawn ones hidden),
@@ -236,9 +246,12 @@ export async function getProjectInterests(projectId: string): Promise<ProjectInt
         join projects pr on pr.id = a.project_id
         where a.user_id = ${projectInterests.userId} and pr.status in ('delivered', 'closed')
       )`,
+      skills: sql<string[]>`coalesce(${apprenticeProfiles.skills}, '{}'::text[])`,
+      availability: apprenticeProfiles.availability,
     })
     .from(projectInterests)
     .leftJoin(profiles, eq(profiles.id, projectInterests.userId))
+    .leftJoin(apprenticeProfiles, eq(apprenticeProfiles.userId, projectInterests.userId))
     .where(and(eq(projectInterests.projectId, projectId), ne(projectInterests.status, 'withdrawn')))
     .orderBy(projectInterests.createdAt)
 }
