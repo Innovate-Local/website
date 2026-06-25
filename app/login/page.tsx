@@ -42,7 +42,7 @@ export default async function LoginPage({
         </Link>
 
         <div className="bg-surface-container-low p-8 md:p-12">
-          <LoginForm initialError={error === 'auth'} />
+          <LoginForm next={safeNext} initialError={error === 'auth'} />
         </div>
       </div>
     </main>

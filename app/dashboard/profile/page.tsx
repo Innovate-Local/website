@@ -3,6 +3,7 @@ import { ROLE_LABEL } from '@/lib/platform/roles'
 import { getApprenticeProfile } from '@/lib/platform/apprentice-profile'
 import { ProfileForm } from '@/components/platform/ProfileForm'
 import { ApprenticeProfileForm } from '@/components/platform/ApprenticeProfileForm'
+import { PasswordForm } from '@/components/platform/PasswordForm'
 
 export default async function ProfilePage() {
   const profile = await requireProfile()
@@ -37,6 +38,17 @@ export default async function ProfilePage() {
       <section className="flex flex-col gap-6">
         <h2 className="font-headline text-2xl text-on-surface">Edit details</h2>
         <ProfileForm fullName={profile.fullName} />
+      </section>
+
+      <section className="flex flex-col gap-6 border-t border-outline-variant/30 pt-10">
+        <div className="flex flex-col gap-2">
+          <h2 className="font-headline text-2xl text-on-surface">Password</h2>
+          <p className="font-body text-on-surface-variant">
+            Set a password to sign in without a magic-link email. If you’ve only used magic links,
+            this creates your password for next time.
+          </p>
+        </div>
+        <PasswordForm />
       </section>
 
       {profile.role === 'apprentice' && (
