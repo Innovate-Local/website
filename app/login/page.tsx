@@ -16,11 +16,11 @@ export default async function LoginPage({
 }) {
   const { next, error } = await searchParams
 
-  // Already signed in → straight to the platform.
-  if (await getUser()) redirect(next || '/dashboard')
-
   // Only allow relative redirect targets (no open redirects to other sites).
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+
+  // Already signed in → straight to the platform.
+  if (await getUser()) redirect(safeNext)
 
   return (
     <main
@@ -42,7 +42,7 @@ export default async function LoginPage({
         </Link>
 
         <div className="bg-surface-container-low p-8 md:p-12">
-          <LoginForm next={safeNext} initialError={error === 'auth'} />
+          <LoginForm initialError={error === 'auth'} />
         </div>
       </div>
     </main>

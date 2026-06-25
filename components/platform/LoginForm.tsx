@@ -4,14 +4,13 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type LoginFormProps = {
-  next: string
   initialError?: boolean
 }
 
 // Passwordless magic-link sign in. Submits the email to Supabase, which mails a
 // link back to /auth/callback; on return the session cookie is set. (Password
 // and OAuth methods can be added here later without changing the callback.)
-export function LoginForm({ next, initialError = false }: LoginFormProps) {
+export function LoginForm({ initialError = false }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
     initialError ? 'error' : 'idle',
@@ -22,7 +21,10 @@ export function LoginForm({ next, initialError = false }: LoginFormProps) {
     setStatus('sending')
 
     const supabase = createClient()
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`
+    // No query string here on purpose: the redirect must match a Supabase
+    // allow-list entry exactly (query params would force a wildcard and, on
+    // mismatch, fall back to Site URL). Post-login destination is /dashboard.
+    const emailRedirectTo = `${window.location.origin}/auth/callback`
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo },
