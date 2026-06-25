@@ -238,7 +238,13 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
 // A subscription invoice was paid (first period or a renewal): grant the period's
 // credits exactly once, keyed on the invoice id.
 async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-  const subId = idOf((invoice as unknown as { subscription?: string | { id: string } }).subscription)
+  // The subscription reference moved in the 2026 API: it's now on
+  // invoice.parent.subscription_details.subscription (was invoice.subscription).
+  const inv = invoice as unknown as {
+    parent?: { subscription_details?: { subscription?: string | { id: string } } }
+    subscription?: string | { id: string }
+  }
+  const subId = idOf(inv.parent?.subscription_details?.subscription ?? inv.subscription)
   if (!subId || !invoice.id) return // not a subscription invoice
 
   const stripe = getStripe()
