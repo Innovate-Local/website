@@ -12,11 +12,13 @@ import {
 } from '@/lib/platform/credits'
 import { ORG_ROLE_LABEL } from '@/lib/platform/roles'
 import { ENGAGEMENT_TYPES } from '@/lib/platform/engagement-types'
+import { getOrgSubscription, listOrgPayments, formatMoney } from '@/lib/platform/billing'
 import { PageHeader } from '@/components/platform/PageHeader'
 import { Metric, MetricGrid } from '@/components/platform/Metric'
 import { LedgerTable } from '@/components/platform/LedgerTable'
 import { GrantCreditsForm } from '@/components/platform/GrantCreditsForm'
 import { OrgCreditActions } from '@/components/platform/OrgCreditActions'
+import { BillingPanel } from '@/components/platform/BillingPanel'
 
 export default async function CreditsPage() {
   const profile = await requireProfile()
@@ -114,12 +116,23 @@ async function OrgPortal({ userId }: { userId: string }) {
   }
 
   const isAdmin = org.roleInOrg === 'admin'
-  const [balance, ledger, orgProjects, otherOrgs] = await Promise.all([
+  const [balance, ledger, orgProjects, otherOrgs, subscription, orgPayments] = await Promise.all([
     getOrgBalance(org.orgId),
     getOrgLedger(org.orgId),
     isAdmin ? getOrgProjects(org.orgId) : Promise.resolve([]),
     isAdmin ? listOtherOrgs(org.orgId) : Promise.resolve([]),
+    getOrgSubscription(org.orgId),
+    listOrgPayments(org.orgId),
   ])
+  const subscriptionView = subscription
+    ? {
+        tier: subscription.tier,
+        status: subscription.status,
+        creditsPerPeriod: subscription.creditsPerPeriod,
+        currentPeriodEnd: subscription.currentPeriodEnd ? subscription.currentPeriodEnd.toISOString() : null,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      }
+    : null
 
   return (
     <div className="flex flex-col gap-10">
@@ -148,6 +161,54 @@ async function OrgPortal({ userId }: { userId: string }) {
           activity here.
         </p>
       )}
+
+      {/* Billing — buy credits / subscribe (admins); payment history (all) */}
+      <section className="flex flex-col gap-4">
+        <h2 className="font-headline text-2xl text-on-surface">Billing</h2>
+        {isAdmin ? (
+          <BillingPanel subscription={subscriptionView} />
+        ) : subscriptionView && ['active', 'trialing', 'past_due'].includes(subscriptionView.status) ? (
+          <p className="bg-surface-container-low p-6 font-body text-on-surface-variant">
+            Subscribed to the <span className="font-semibold capitalize">{subscriptionView.tier}</span> plan
+            ({subscriptionView.creditsPerPeriod} credits/mo). Your organization’s admins manage billing.
+          </p>
+        ) : (
+          <p className="bg-surface-container-low p-6 font-body text-on-surface-variant">
+            Your organization’s admins manage plans and credit purchases.
+          </p>
+        )}
+
+        {orgPayments.length > 0 && (
+          <div className="overflow-x-auto border border-outline-variant/30">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-surface-container-high text-left">
+                  <th className="px-5 py-3 font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Date</th>
+                  <th className="px-5 py-3 font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Type</th>
+                  <th className="px-5 py-3 text-right font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Credits</th>
+                  <th className="px-5 py-3 text-right font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Amount</th>
+                  <th className="px-5 py-3 font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orgPayments.map((p) => (
+                  <tr key={p.id} className="border-t border-outline-variant/30 even:bg-surface-container-low/40">
+                    <td className="whitespace-nowrap px-5 py-3 text-on-surface-variant">
+                      {new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-5 py-3 text-on-surface">{p.kind === 'subscription' ? 'Subscription' : 'Top-up'}</td>
+                    <td className="px-5 py-3 text-right tabular-nums text-on-surface">{p.credits}</td>
+                    <td className="px-5 py-3 text-right tabular-nums text-on-surface-variant">{formatMoney(p.amountCents, p.currency)}</td>
+                    <td className="px-5 py-3">
+                      <span className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">{p.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section className="flex flex-col gap-4">
         <h2 className="font-headline text-2xl text-on-surface">Activity</h2>

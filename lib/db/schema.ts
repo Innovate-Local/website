@@ -8,7 +8,7 @@
 // ever drift — use it to verify, especially for `inquiries`, whose exact shape
 // lives only in the remote project today.)
 
-import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, date, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, date, boolean, index } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
 // inquiries — existing table. Public contact forms (join/partner/members) are
@@ -114,6 +114,7 @@ export const organizations = pgTable('organizations', {
   location: text('location'),
   industry: text('industry'),
   size: text('size'),
+  stripeCustomerId: text('stripe_customer_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
@@ -300,7 +301,7 @@ export const creditTransactions = pgTable(
     }),
     projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
     kind: text('kind')
-      .$type<'grant' | 'transfer_out' | 'transfer_in' | 'spend' | 'reclaim'>()
+      .$type<'grant' | 'transfer_out' | 'transfer_in' | 'spend' | 'reclaim' | 'purchase'>()
       .notNull(),
     delta: integer('delta').notNull(),
     engagementType: text('engagement_type'),
@@ -312,6 +313,53 @@ export const creditTransactions = pgTable(
     orgIdx: index('credit_tx_org_idx').on(t.orgId),
     projectIdx: index('credit_tx_project_idx').on(t.projectId),
     createdIdx: index('credit_tx_created_idx').on(t.createdAt),
+  }),
+)
+
+// org_subscriptions — an org's current Stripe subscription state (one per org).
+export const orgSubscriptions = pgTable('org_subscriptions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  orgId: uuid('org_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' }),
+  stripeSubscriptionId: text('stripe_subscription_id').notNull().unique(),
+  stripeCustomerId: text('stripe_customer_id'),
+  tier: text('tier').$type<'catalyst' | 'anchor' | 'keystone'>(),
+  creditsPerPeriod: integer('credits_per_period').notNull().default(0),
+  status: text('status').notNull().default('incomplete'),
+  currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+// payments — a record of each money movement (one-time top-up or subscription
+// invoice). Credits are granted via credit_transactions on success.
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    kind: text('kind').$type<'one_time' | 'subscription'>().notNull(),
+    stripeCheckoutSessionId: text('stripe_checkout_session_id').unique(),
+    stripePaymentIntentId: text('stripe_payment_intent_id'),
+    stripeInvoiceId: text('stripe_invoice_id').unique(),
+    amountCents: integer('amount_cents').notNull().default(0),
+    currency: text('currency').notNull().default('usd'),
+    credits: integer('credits').notNull().default(0),
+    status: text('status')
+      .$type<'pending' | 'paid' | 'failed' | 'refunded' | 'canceled'>()
+      .notNull()
+      .default('pending'),
+    createdBy: uuid('created_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+  },
+  (t) => ({
+    orgIdx: index('payments_org_idx').on(t.orgId),
   }),
 )
 
@@ -337,5 +385,7 @@ export type ProjectFeedback = typeof projectFeedback.$inferSelect
 export type NewProjectFeedback = typeof projectFeedback.$inferInsert
 export type ApprenticeProfile = typeof apprenticeProfiles.$inferSelect
 export type NewApprenticeProfile = typeof apprenticeProfiles.$inferInsert
+export type OrgSubscription = typeof orgSubscriptions.$inferSelect
+export type Payment = typeof payments.$inferSelect
 export type ProjectDeliverable = typeof projectDeliverables.$inferSelect
 export type NewProjectDeliverable = typeof projectDeliverables.$inferInsert

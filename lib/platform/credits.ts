@@ -296,6 +296,23 @@ export async function recordGrant(input: {
   })
 }
 
+// Credits bought (one-time top-up or a subscription invoice). Called from the
+// payments service after Stripe confirms payment.
+export async function recordPurchase(input: {
+  orgId: string
+  amount: number
+  note?: string | null
+  authorizedBy?: string | null
+}): Promise<void> {
+  await getDb().insert(ct).values({
+    orgId: input.orgId,
+    kind: 'purchase',
+    delta: input.amount,
+    note: input.note ?? null,
+    authorizedBy: input.authorizedBy ?? null,
+  })
+}
+
 export async function recordSpend(input: {
   orgId: string
   projectId?: string | null
