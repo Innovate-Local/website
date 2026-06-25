@@ -77,16 +77,16 @@ These are remote project settings the CLI can't push without linking/login:
 2. **Seed the first hub staff:** sign in once at `/login` (creates an
    `apprentice` profile via the signup trigger), then run
    `update public.profiles set role = 'hub_staff' where email = '<you>';`
-3. **Org-member invites — Email Template (required for invites to work):**
-   Auth → Email Templates → **Invite user**. Admin invites use a `token_hash`
-   link (no PKCE verifier), so the link must hit our app directly. Set the body's
-   link to:
-   ```html
-   <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite">Accept your invite</a>
-   ```
-   The `/auth/callback` route verifies the token (`verifyOtp`) and drops them on
-   `/dashboard`. (Default magic-link login is unaffected — the callback handles
-   both `?code=` and `?token_hash=`.)
+3. **Branded email templates:** all six auth emails live as HTML in
+   `supabase/templates/` and are pushed with `npm run email:templates` (needs
+   `SUPABASE_ACCESS_TOKEN` in `.env`). They all link to
+   `{{ .SiteURL }}/auth/callback?token_hash=…&type=…`, which `/auth/callback`
+   verifies via `verifyOtp` — this is what makes invites work (admin invites have
+   no PKCE verifier) and is required for them. The callback handles both
+   `?code=` (browser magic-link login) and `?token_hash=` links. See
+   `supabase/templates/_README.md`. Note: because the templates use
+   `{{ .SiteURL }}`, links route to the Site URL domain — fine for prod; for
+   local-dev login testing, point Site URL at localhost temporarily.
 4. **SMTP for real invites:** Supabase's built-in email is rate-limited (a few
    per hour) and not for production. Configure custom SMTP (Auth → SMTP, e.g.
    Resend/Postmark) before relying on invite delivery.

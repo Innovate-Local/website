@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:studio": "drizzle-kit studio",
-    "db:pull": "drizzle-kit pull"
+    "db:pull": "drizzle-kit pull",
+    "email:templates": "node scripts/push-email-templates.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
