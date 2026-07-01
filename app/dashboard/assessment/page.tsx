@@ -9,6 +9,11 @@ import { ActionButton } from '@/components/platform/ActionButton'
 import { startAssessmentAction, replyAssessment, finishAssessment } from './actions'
 import type { InterviewMessage } from '@/lib/matchcore/types'
 
+// The interview + scoring server actions here call a reasoning model. Give them
+// headroom beyond Vercel's 10s default (clamped to the plan's max — a no-op on
+// Hobby, where 'minimal' reasoning effort already keeps calls to a few seconds).
+export const maxDuration = 60
+
 export default async function AssessmentPage() {
   const me = await requireRole('apprentice')
   const current = await getCurrentAssessment(me.id)

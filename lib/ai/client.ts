@@ -74,8 +74,16 @@ async function callChat(messages: ChatMessage[], opts: ChatOpts = {}): Promise<s
     max_completion_tokens: opts.maxTokens ?? 4096,
   }
   if (opts.responseFormat) body.response_format = opts.responseFormat
-  const effort = process.env.OPENAI_REASONING_EFFORT?.trim()
-  if (effort) body.reasoning_effort = effort
+  // gpt-5-* are reasoning models: hidden reasoning tokens are billed against
+  // max_completion_tokens AND drive latency. At default effort a scoring call
+  // runs ~19s — past Vercel's serverless limit (10s Hobby) — and can consume the
+  // whole token budget, yielding empty content. Default to 'minimal' (~4s, no
+  // reasoning tokens) so we stay well under the timeout and leave room for output.
+  // Override with OPENAI_REASONING_EFFORT (set it to 'off' to omit entirely for
+  // non-reasoning models/providers that reject the param).
+  const raw = process.env.OPENAI_REASONING_EFFORT?.trim()
+  const effort = raw && raw.length ? raw : 'minimal'
+  if (effort !== 'off') body.reasoning_effort = effort
 
   let res: Response
   try {

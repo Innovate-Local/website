@@ -21,6 +21,10 @@ import {
   approveMatchAction,
 } from './actions'
 
+// Discovery + scoring server actions here call a reasoning model — give them
+// headroom beyond Vercel's 10s default (clamped to the plan's max).
+export const maxDuration = 60
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-4">
