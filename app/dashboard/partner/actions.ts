@@ -12,7 +12,7 @@ import {
   adjustAllocation,
   assignInternal,
   getPartnerAvailable,
-  getPartnerForUser,
+  resolveViewerPartner,
   removePartnerMember,
   setPartnerMemberRole,
   transferExternal,
@@ -35,7 +35,9 @@ export type ActionResult = { ok: true; message?: string } | { ok: false; error: 
 // aren't an authorized user on any partner.
 async function actor(): Promise<{ partner: PartnerContext; userId: string; name: string } | null> {
   const profile = await requireProfile()
-  const partner = await getPartnerForUser(profile.id)
+  // resolveViewerPartner honours a staff developer's "act as" partner (as admin)
+  // and otherwise uses the user's own membership.
+  const partner = await resolveViewerPartner(profile.id)
   if (!partner) return null
   return { partner, userId: profile.id, name: profile.fullName || profile.email || 'A partner user' }
 }

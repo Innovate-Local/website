@@ -12,6 +12,7 @@ import {
   projects,
   profiles,
 } from '@/lib/db/schema'
+import { getActAs } from '@/lib/auth/session'
 import type { ProjectStatus } from './project-status'
 import type { CreditKind } from './credit-kinds'
 
@@ -197,6 +198,34 @@ export async function getPrimaryOrgForUser(userId: string): Promise<OrgMembershi
   return first ?? null
 }
 
+// An organization addressed by id, shaped as an OrgMembership. Used when a
+// hub_staff developer is "acting as" a member of that org (admin, for testing).
+export async function getOrgContext(orgId: string): Promise<OrgMembership | null> {
+  const db = getDb()
+  const [org] = await db
+    .select({
+      orgId: organizations.id,
+      name: organizations.name,
+      orgType: organizations.orgType,
+      location: organizations.location,
+      industry: organizations.industry,
+      size: organizations.size,
+    })
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1)
+  if (!org) return null
+  return { ...org, roleInOrg: 'admin' }
+}
+
+// The organization the current viewer should see: the "act as" org for a staff
+// developer, otherwise the user's own primary org.
+export async function resolveViewerOrg(userId: string): Promise<OrgMembership | null> {
+  const actAs = await getActAs()
+  if (actAs?.orgId) return getOrgContext(actAs.orgId)
+  return getPrimaryOrgForUser(userId)
+}
+
 export async function isOrgAdmin(userId: string, orgId: string): Promise<boolean> {
   const db = getDb()
   const [m] = await db
@@ -266,6 +295,15 @@ export async function getProjectCreditsSpent(projectId: string): Promise<number>
     .from(ct)
     .where(eq(ct.projectId, projectId))
   return row?.spent ?? 0
+}
+
+// Every organization as { id, name } — used by the staff "act as" picker.
+export async function listAllOrgs(): Promise<{ id: string; name: string }[]> {
+  const db = getDb()
+  return db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(organizations)
+    .orderBy(organizations.name)
 }
 
 // Other organizations a transfer can target (everything but the sender).

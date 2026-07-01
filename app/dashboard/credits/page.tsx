@@ -5,10 +5,10 @@ import {
   getOrgBalance,
   getOrgLedger,
   getOrgProjects,
-  getPrimaryOrgForUser,
   getProgramTotals,
   listOrgCreditSummaries,
   listOtherOrgs,
+  resolveViewerOrg,
 } from '@/lib/platform/credits'
 import { ORG_ROLE_LABEL } from '@/lib/platform/roles'
 import { ENGAGEMENT_TYPES } from '@/lib/platform/engagement-types'
@@ -101,7 +101,7 @@ async function StaffConsole() {
 
 // ---- Org member: their organization's credit position ----------------------
 async function OrgPortal({ userId }: { userId: string }) {
-  const org = userId ? await getPrimaryOrgForUser(userId) : null
+  const org = userId ? await resolveViewerOrg(userId) : null
 
   if (!org) {
     return (

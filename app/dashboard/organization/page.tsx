@@ -4,7 +4,7 @@ import {
   getOrgBalance,
   getOrgMembers,
   getOrgProjects,
-  getPrimaryOrgForUser,
+  resolveViewerOrg,
 } from '@/lib/platform/credits'
 import { PROJECT_STATUS_LABEL } from '@/lib/platform/project-status'
 import { listOrgRequests, REQUEST_STATUS_LABEL } from '@/lib/platform/project-requests'
@@ -19,7 +19,7 @@ import { ProjectRequestForm } from '@/components/platform/ProjectRequestForm'
 // position, and the projects it's running. Admins can manage the team here.
 export default async function OrganizationPage() {
   const profile = await requireProfile()
-  const org = await getPrimaryOrgForUser(profile.id)
+  const org = await resolveViewerOrg(profile.id)
 
   if (!org) {
     return (

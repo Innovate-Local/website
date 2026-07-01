@@ -3,7 +3,7 @@ import { requireProfile } from '@/lib/auth/session'
 import { ROLE_TAGLINE } from '@/lib/platform/roles'
 import { listProjectsForUser, listApprentices, PROJECT_STATUS_LABEL } from '@/lib/platform/projects'
 import {
-  getPrimaryOrgForUser,
+  resolveViewerOrg,
   getOrgBalance,
   getOrgProjects,
   getProgramTotals,
@@ -102,7 +102,7 @@ async function ApprenticeHome({ profile }: { profile: Profile }) {
 
 // ---- Org member -------------------------------------------------------------
 async function OrgMemberHome({ profile }: { profile: Profile }) {
-  const org = await getPrimaryOrgForUser(profile.id)
+  const org = await resolveViewerOrg(profile.id)
 
   if (!org) {
     return (

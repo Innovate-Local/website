@@ -7,6 +7,7 @@
 // position look like", reused by the console, staff views, and the redeem page.
 import { randomBytes } from 'crypto'
 import { and, desc, eq, ilike, sql } from 'drizzle-orm'
+import { getActAs } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import {
   organizations,
@@ -106,6 +107,14 @@ export async function getPartnerById(partnerId: string): Promise<PartnerContext 
     .where(eq(partners.id, partnerId))
     .limit(1)
   return row ?? null
+}
+
+// The partner console the current viewer should see: the "act as" partner for a
+// staff developer (as admin), otherwise the user's own membership.
+export async function resolveViewerPartner(userId: string): Promise<PartnerContext | null> {
+  const actAs = await getActAs()
+  if (actAs?.partnerId) return getPartnerById(actAs.partnerId)
+  return getPartnerForUser(userId)
 }
 
 export async function getPartnerMemberRole(

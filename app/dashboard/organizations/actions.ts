@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
-import { requireProfile, requireRole } from '@/lib/auth/session'
+import { isRealStaff, requireProfile, requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import { organizations, organizationMembers, profiles } from '@/lib/db/schema'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
@@ -17,7 +17,8 @@ const ORG_ROLES = ['admin', 'member'] as const
 // org itself. Returns the profile (used as authorizedBy etc.) or null.
 async function orgManager(orgId: string): Promise<{ id: string } | null> {
   const profile = await requireProfile()
-  if (profile.role === 'hub_staff') return profile
+  // Real staff keep management rights even while "acting as" an org member.
+  if (await isRealStaff()) return profile
   const db = getDb()
   const [m] = await db
     .select({ role: organizationMembers.roleInOrg })

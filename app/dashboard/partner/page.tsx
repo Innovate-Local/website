@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getUser, requireProfile } from '@/lib/auth/session'
 import {
-  getPartnerForUser,
+  resolveViewerPartner,
   getPartnerOverview,
   getRedemptionSummary,
   listLedger,
@@ -18,7 +18,7 @@ import { PartnerConsole } from '@/components/platform/partner/PartnerConsole'
 export default async function PartnerPage() {
   const profile = await requireProfile()
   const user = await getUser()
-  const partner = user ? await getPartnerForUser(user.id) : null
+  const partner = user ? await resolveViewerPartner(user.id) : null
 
   if (!partner) {
     const staff = profile.role === 'hub_staff'
