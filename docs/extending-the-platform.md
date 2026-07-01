@@ -263,6 +263,8 @@ read at runtime. Never commit secrets, never log keys, never put a secret in a
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | embedded Checkout in the browser |
 | `STRIPE_WEBHOOK_SECRET` | webhook signature verification (per-endpoint; differs local vs prod) |
 | `STRIPE_PRICE_CATALYST` / `_ANCHOR` / `_KEYSTONE` | subscription Price IDs (§12) |
+| `RESEND_API_KEY` | transactional email via Resend (`lib/email.ts`) — see §15 |
+| `EMAIL_FROM` | sender for transactional email; needs a Resend-**verified domain** |
 
 Commands:
 
@@ -392,3 +394,68 @@ Delete such scripts after; never commit them.
   (statuses, labels, plan config) in their own no-server-import modules.
 - **zsh quirks** when scripting: `timeout` isn't on macOS; `--include=*.ts` globs
   need quoting. Prefer the dedicated file tools over shell for searches.
+
+---
+
+## 15. Transactional email (Resend)
+
+General (non-auth) email goes through **Resend** — auth emails still go through
+Supabase (§9). One reusable path, so any feature can send:
+
+- `lib/email.ts` → `sendEmail({ to, subject, html, cc?, replyTo? })`. Lazy client;
+  **safely no-ops + logs** if `RESEND_API_KEY` is unset, so nothing hard-depends
+  on email in dev. Returns a typed result — callers proceed on failure (e.g. still
+  show a redemption code in-app).
+- Templates are pure HTML builders in `lib/emails/*` (inline styles — email
+  clients ignore Tailwind). Keep new templates there.
+- **Prod requirement:** `EMAIL_FROM` must be a **Resend-verified domain** sender
+  (e.g. `noreply@innovatelocal.ai`). Verify the domain in the Resend dashboard
+  (DNS records) before real sends; until then Resend rejects with a 403.
+
+## 16. Community Innovation Partners (CIP)
+
+A **partner** is an organization designated as a credit **distributor** (vs a
+normal org, which is a credit **consumer** — see the partner-vs-org distinction
+below). Model + service in `lib/platform/partners.ts` (+ pure
+`partner-constants.ts`); migration `20260701120000_community_innovation_partners.sql`.
+
+- **Partner vs organization:** every partner wraps exactly one `organizations`
+  row (`partners.org_id`). An org receives a hub grant and **spends** it on its
+  own projects. A partner gets an **annual allocation for a cycle** and pushes it
+  out two ways: **assign** (internal → its own departments) and **transfer**
+  (external → other orgs, who get an emailed **redemption code**). Recipients then
+  **redeem** codes for engagements; unused credits can be **reclaimed**.
+- **Derived balances** (no cached totals): partner available = allocation −
+  Σ(assign+transfer) + Σ(reclaim); recipient assigned/redeemed derive similarly.
+  The ledger is `partner_credit_events` (append-only), same philosophy as
+  `credit_transactions`.
+- **Free-form recipients, auto-linked:** external recipients are typed in, and if
+  the name matches a platform org we set `partner_recipients.linked_org_id` — the
+  bridge between partners and organizations.
+- **Governance is stored + lightly enforced:** partner users are admin/approver/
+  drafter with per-role single-transfer limits + an expiration window; a full
+  approval queue is deferred (noted in `docs/cip-portal-plan.md`).
+- **Routes:** `/dashboard/partner` (member console — 5-tab client component),
+  `/dashboard/partners` + `[id]` (hub_staff: designate/configure), public
+  `/redeem/[code]` (no auth; the code is the credential). Staff designate a
+  partner; that seeds the org's members as partner users.
+
+## 17. "Act as" — staff developer persona switcher
+
+So one developer account can view/use every portal without separate logins.
+Staff-only, in `lib/auth/session.ts` + `components/platform/ActAsBar.tsx`.
+
+- A real `hub_staff` user picks a **persona**: effective role (apprentice /
+  org_member / hub_staff) + an org and/or partner **context**. Stored in a cookie,
+  **only ever honoured when the real account is hub_staff** — so it can't escalate
+  privilege. A bar (rendered in `DashboardShell`) shows the active persona with a
+  one-click Exit.
+- Key helpers: `getProfile()` returns the **effective** profile (role overridden)
+  → drives nav + page gating + which portal renders. `getRealProfile()` /
+  `isRealStaff()` give the true identity — **authorization bypasses key off the
+  real role**, so staff keep their powers while impersonating. `getActAs()` is the
+  guarded persona. Context resolvers `resolveViewerOrg` / `resolveViewerPartner`
+  return the acted-as org/partner (as admin) or fall back to the user's own.
+- When adding a new portal/page that depends on "the current user's org/partner,"
+  use the `resolveViewer*` helpers (not the raw `getPrimaryOrgForUser` /
+  `getPartnerForUser`) so it participates in act-as automatically.
