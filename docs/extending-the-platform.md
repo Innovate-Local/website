@@ -459,3 +459,44 @@ Staff-only, in `lib/auth/session.ts` + `components/platform/ActAsBar.tsx`.
 - When adding a new portal/page that depends on "the current user's org/partner,"
   use the `resolveViewer*` helpers (not the raw `getPrimaryOrgForUser` /
   `getPartnerForUser`) so it participates in act-as automatically.
+
+## 18. MatchCore — AI matching (Phases A/B/C)
+
+Structured competency profiles for apprentices (**CRR**), discovery + complexity
+for projects (**PCS**), and a matching engine (**SAS** + team assembly). Built to
+be **decoupled** — four hard boundaries so the flow can change without cascades:
+
+- **`lib/ai/`** — the *only* place that talks to a model. A vendor-agnostic
+  fetch wrapper over an OpenAI-compatible Chat Completions endpoint. Swap
+  model/provider by env: `OPEN_AI_API_KEY` (required), `OPENAI_MODEL`
+  (default `gpt-5-nano`), `OPENAI_BASE_URL`, `OPENAI_REASONING_EFFORT`. No SDK.
+  `aiConfigured()` gates the UI when no key is present.
+- **`lib/matchcore/config/`** — the **rubrics as versioned data**: CRR sections/
+  criteria/weights (`competency.ts`), PCS dimensions (`complexity.ts`), team +
+  SAS rules (`matching.ts`). To change how anyone is scored, edit config and bump
+  `version`. Every stored row records its `rubric_version`; scores live in JSONB,
+  so **rubric changes need no migration**.
+- **Pure scoring/matching** — `scoring.ts` (signals → CRR/PCS) and `matching.ts`
+  (eligibility → SAS → complementary team) are deterministic, no DB/AI. The LLM
+  only *extracts evidence-backed per-item points*; **code sums them**, so scores
+  are reproducible. Matching makes **no** model call — rationales are templated.
+- **Prompts/agents** — `prompts.ts` (built from config) + `agents.ts` keep
+  conversation, extraction, and scoring as three separate calls. Replace the AI
+  interview with a manual form by writing a different `source` row; nothing else
+  changes.
+
+Data (migration `20260701130000_matchcore.sql`): `apprentice_assessments`,
+`project_discoveries`, `project_matches`. Lifecycle `in_progress → scored →
+approved`. Services: `assessments.ts`, `discovery.ts`, `matches.ts`. Approving a
+match writes the team into `project_assignments` (the bridge to the real loop).
+
+Surfaces: apprentice `/dashboard/assessment` (Compass interview → card); staff
+`/dashboard/assessments` (review/approve); staff `/dashboard/projects/[id]/matching`
+(Scout discovery → PCS, then generate/approve a team). The chat is the reusable
+`MatchcoreInterview` client component, driven entirely by server actions passed
+as props. Feedback follows the standard action shape (`{ ok } | { ok:false, error }`).
+
+Note: matching currently pools **scored or approved** apprentices (see
+`generateMatchAction`, `approvedOnly:false`) so it's usable before every profile
+is approved — the consequential gate is approving the *match* (which staffs the
+team). Flip to `approvedOnly:true` to require per-profile approval first.

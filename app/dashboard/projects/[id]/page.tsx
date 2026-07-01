@@ -110,6 +110,18 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         )}
       </div>
 
+      {isStaff && (
+        <Link
+          href={`/dashboard/projects/${project.id}/matching`}
+          className="flex items-center justify-between gap-3 bg-surface-container p-5 hover:bg-surface-container-high transition-colors"
+        >
+          <span className="font-body text-on-surface">
+            MatchCore — run discovery, score complexity, and match a team
+          </span>
+          <span className="font-label text-xs uppercase tracking-widest text-primary">Open →</span>
+        </Link>
+      )}
+
       {browsingOpportunity && (
         <div className="flex flex-wrap items-center justify-between gap-3 bg-surface-container-low p-5">
           <span className="font-body text-on-surface-variant">

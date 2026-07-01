@@ -533,6 +533,106 @@ export const partnerCreditEvents = pgTable(
   }),
 )
 
+// ===========================================================================
+// MatchCore — Phases A/B/C. Mirrors
+// supabase/migrations/20260701130000_matchcore.sql. Scores + raw signals live in
+// jsonb; every row records the rubric_version that produced it. Keep the status
+// unions in sync with that file's CHECK constraints.
+// ===========================================================================
+
+// apprentice_assessments — a scored competency profile (CRR) for an apprentice.
+export const apprenticeAssessments = pgTable(
+  'apprentice_assessments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').notNull(),
+    rubricVersion: text('rubric_version').notNull(),
+    status: text('status')
+      .$type<'in_progress' | 'scored' | 'approved' | 'archived'>()
+      .notNull()
+      .default('in_progress'),
+    source: text('source').$type<'ai_interview' | 'manual'>().notNull().default('ai_interview'),
+    transcript: jsonb('transcript').notNull().default([]),
+    signals: jsonb('signals').notNull().default({}),
+    result: jsonb('result').notNull().default({}),
+    crr: integer('crr'),
+    crrTier: text('crr_tier'),
+    sectionPoints: jsonb('section_points').notNull().default({}),
+    summary: text('summary'),
+    scoredAt: timestamp('scored_at', { withTimezone: true }),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userIdx: index('apprentice_assessments_user_idx').on(t.userId),
+    statusIdx: index('apprentice_assessments_status_idx').on(t.status),
+  }),
+)
+
+// project_discoveries — discovery briefs + complexity (PCS) for a project.
+export const projectDiscoveries = pgTable(
+  'project_discoveries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    rubricVersion: text('rubric_version').notNull(),
+    status: text('status')
+      .$type<'in_progress' | 'scored' | 'approved' | 'archived'>()
+      .notNull()
+      .default('in_progress'),
+    source: text('source').$type<'ai_interview' | 'manual'>().notNull().default('ai_interview'),
+    transcript: jsonb('transcript').notNull().default([]),
+    signals: jsonb('signals').notNull().default({}),
+    result: jsonb('result').notNull().default({}),
+    pcs: integer('pcs'),
+    complexity: text('complexity'),
+    projectType: text('project_type'),
+    secondaryType: text('secondary_type'),
+    summary: text('summary'),
+    scoredAt: timestamp('scored_at', { withTimezone: true }),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_discoveries_project_idx').on(t.projectId),
+    statusIdx: index('project_discoveries_status_idx').on(t.status),
+  }),
+)
+
+// project_matches — a saved match run (ranked candidates + proposed team).
+export const projectMatches = pgTable(
+  'project_matches',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    rubricVersion: text('rubric_version').notNull(),
+    pcs: integer('pcs'),
+    complexity: text('complexity'),
+    projectType: text('project_type'),
+    teamSize: integer('team_size').notNull().default(1),
+    ranked: jsonb('ranked').notNull().default([]),
+    team: jsonb('team').notNull().default({}),
+    status: text('status').$type<'proposed' | 'approved' | 'superseded'>().notNull().default('proposed'),
+    generatedBy: uuid('generated_by'),
+    approvedBy: uuid('approved_by'),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    projectIdx: index('project_matches_project_idx').on(t.projectId),
+    statusIdx: index('project_matches_status_idx').on(t.status),
+  }),
+)
+
 // Inferred row types for use across the app.
 export type Inquiry = typeof inquiries.$inferSelect
 export type Student = typeof students.$inferSelect
@@ -571,3 +671,9 @@ export type PartnerRedemptionCode = typeof partnerRedemptionCodes.$inferSelect
 export type NewPartnerRedemptionCode = typeof partnerRedemptionCodes.$inferInsert
 export type PartnerCreditEvent = typeof partnerCreditEvents.$inferSelect
 export type NewPartnerCreditEvent = typeof partnerCreditEvents.$inferInsert
+export type ApprenticeAssessment = typeof apprenticeAssessments.$inferSelect
+export type NewApprenticeAssessment = typeof apprenticeAssessments.$inferInsert
+export type ProjectDiscovery = typeof projectDiscoveries.$inferSelect
+export type NewProjectDiscovery = typeof projectDiscoveries.$inferInsert
+export type ProjectMatch = typeof projectMatches.$inferSelect
+export type NewProjectMatch = typeof projectMatches.$inferInsert
