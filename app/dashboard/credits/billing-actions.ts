@@ -1,8 +1,8 @@
 'use server'
 
 import { headers } from 'next/headers'
-import { requireProfile } from '@/lib/auth/session'
-import { getPrimaryOrgForUser, isOrgAdmin } from '@/lib/platform/credits'
+import { isRealStaff, requireProfile } from '@/lib/auth/session'
+import { resolveViewerOrg, isOrgAdmin } from '@/lib/platform/credits'
 import {
   createSubscriptionCheckout,
   createTopupCheckout,
@@ -21,9 +21,9 @@ async function origin(): Promise<string> {
 // The buying org is the acting user's organization; only its admins may pay.
 async function buyerOrg(): Promise<{ orgId: string; userId: string } | { error: string }> {
   const me = await requireProfile()
-  const org = await getPrimaryOrgForUser(me.id)
+  const org = await resolveViewerOrg(me.id)
   if (!org) return { error: 'You’re not part of an organization yet.' }
-  const allowed = me.role === 'hub_staff' || (await isOrgAdmin(me.id, org.orgId))
+  const allowed = (await isRealStaff()) || (await isOrgAdmin(me.id, org.orgId))
   if (!allowed) return { error: 'Only organization admins can manage billing.' }
   return { orgId: org.orgId, userId: me.id }
 }

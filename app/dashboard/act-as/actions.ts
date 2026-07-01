@@ -21,11 +21,15 @@ export async function setActAs(formData: FormData): Promise<ActionResult> {
   const orgId = String(formData.get('orgId') ?? '').trim() || null
   const partnerId = String(formData.get('partnerId') ?? '').trim() || null
 
+  // The persona's in-context role (validated on read; default admin).
+  const orgRole = String(formData.get('orgRole') ?? '').trim() || undefined
+  const partnerRole = String(formData.get('partnerRole') ?? '').trim() || undefined
+
   // Acting as hub_staff with no context is just the real view — clear instead.
   if (role === 'hub_staff' && !orgId && !partnerId) {
     ;(await cookies()).delete(ACT_AS_COOKIE)
   } else {
-    ;(await cookies()).set(ACT_AS_COOKIE, JSON.stringify({ role, orgId, partnerId }), {
+    ;(await cookies()).set(ACT_AS_COOKIE, JSON.stringify({ role, orgId, partnerId, orgRole, partnerRole }), {
       httpOnly: true,
       sameSite: 'lax',
       path: '/',

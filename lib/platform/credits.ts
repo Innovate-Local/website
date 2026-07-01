@@ -13,6 +13,7 @@ import {
   profiles,
 } from '@/lib/db/schema'
 import { getActAs } from '@/lib/auth/session'
+import type { OrgRole } from './roles'
 import type { ProjectStatus } from './project-status'
 import type { CreditKind } from './credit-kinds'
 
@@ -199,8 +200,12 @@ export async function getPrimaryOrgForUser(userId: string): Promise<OrgMembershi
 }
 
 // An organization addressed by id, shaped as an OrgMembership. Used when a
-// hub_staff developer is "acting as" a member of that org (admin, for testing).
-export async function getOrgContext(orgId: string): Promise<OrgMembership | null> {
+// hub_staff developer is "acting as" a member of that org — roleInOrg lets the
+// persona be an admin or a plain member, so both experiences are testable.
+export async function getOrgContext(
+  orgId: string,
+  roleInOrg: OrgRole = 'admin',
+): Promise<OrgMembership | null> {
   const db = getDb()
   const [org] = await db
     .select({
@@ -215,14 +220,16 @@ export async function getOrgContext(orgId: string): Promise<OrgMembership | null
     .where(eq(organizations.id, orgId))
     .limit(1)
   if (!org) return null
-  return { ...org, roleInOrg: 'admin' }
+  return { ...org, roleInOrg }
 }
 
 // The organization the current viewer should see: the "act as" org for a staff
-// developer, otherwise the user's own primary org.
+// developer, otherwise the user's own primary org. While a staff dev is
+// impersonating a persona WITHOUT an org context, they see no org — the real
+// account's own membership must not leak into every persona.
 export async function resolveViewerOrg(userId: string): Promise<OrgMembership | null> {
   const actAs = await getActAs()
-  if (actAs?.orgId) return getOrgContext(actAs.orgId)
+  if (actAs) return actAs.orgId ? getOrgContext(actAs.orgId, actAs.orgRole) : null
   return getPrimaryOrgForUser(userId)
 }
 

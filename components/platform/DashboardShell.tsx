@@ -27,8 +27,11 @@ export async function DashboardShell({
 
   // Authorized users on a Community Innovation Partner get a console link,
   // regardless of their platform role — as does a staff dev acting as a partner.
-  const showPartner = actAs?.partnerId
-    ? true
+  // While impersonating (actAs set), the link tracks the persona's partner
+  // context only; the real staff account's own membership must not leak into
+  // every persona.
+  const showPartner = actAs
+    ? Boolean(actAs.partnerId)
     : profile.role !== 'hub_staff' && Boolean(await getPartnerForUser(profile.id))
   if (showPartner && !items.some((i) => i.href === '/dashboard/partner')) {
     items.splice(Math.max(0, items.length - 1), 0, {
@@ -41,7 +44,7 @@ export async function DashboardShell({
   let bar: React.ReactNode = null
   if (isStaff) {
     const [orgs, partners] = await Promise.all([listAllOrgs(), listPartners()])
-    const partnerOptions = partners.map((p) => ({ id: p.id, orgName: p.orgName }))
+    const partnerOptions = partners.map((p) => ({ id: p.id, orgId: p.orgId, orgName: p.orgName }))
     bar = (
       <ActAsBar
         active={actAs}

@@ -8,6 +8,8 @@ import { eq } from 'drizzle-orm'
 import { createClient } from '@/lib/supabase/server'
 import { getDb } from '@/lib/db'
 import { profiles, type Profile, type UserRole } from '@/lib/db/schema'
+import { ORG_ROLES, type OrgRole } from '@/lib/platform/roles'
+import { PARTNER_ROLES, type PartnerRole } from '@/lib/platform/partner-constants'
 
 // The authenticated Supabase user (or null). Uses getUser(), which revalidates
 // the token with Supabase rather than trusting the cookie blindly. Wrapped in
@@ -35,6 +37,11 @@ export type ActAsState = {
   role: UserRole
   orgId: string | null
   partnerId: string | null
+  // The persona's role WITHIN its org / partner (independent of the platform
+  // role above), so the member-vs-admin and drafter/approver/admin experiences
+  // are testable. Default to the top role when a context is set but unspecified.
+  orgRole: OrgRole
+  partnerRole: PartnerRole
 }
 
 // Raw cookie read — no authorization. Use getActAs() to get the guarded value.
@@ -48,6 +55,9 @@ async function readActAsCookie(): Promise<ActAsState | null> {
       role: parsed.role,
       orgId: parsed.orgId ?? null,
       partnerId: parsed.partnerId ?? null,
+      orgRole: parsed.orgRole && ORG_ROLES.includes(parsed.orgRole) ? parsed.orgRole : 'admin',
+      partnerRole:
+        parsed.partnerRole && PARTNER_ROLES.includes(parsed.partnerRole) ? parsed.partnerRole : 'admin',
     }
   } catch {
     return null

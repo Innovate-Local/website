@@ -82,13 +82,18 @@ export async function getPartnerForUser(userId: string): Promise<PartnerContext 
   return row ?? null
 }
 
-// Same shape, addressed by partner id (staff views, where there's no membership).
-export async function getPartnerById(partnerId: string): Promise<PartnerContext | null> {
+// Same shape, addressed by partner id (staff views, where there's no
+// membership). partnerRole lets a "acting as" staff dev take on any partner role
+// so the drafter/approver/admin limits + sign-off gate are all testable.
+export async function getPartnerById(
+  partnerId: string,
+  partnerRole: PartnerRole = 'admin',
+): Promise<PartnerContext | null> {
   const db = getDb()
   const [row] = await db
     .select({
       partnerId: partners.id,
-      partnerRole: sql<PartnerRole>`'admin'`,
+      partnerRole: sql<PartnerRole>`${partnerRole}`,
       orgId: partners.orgId,
       orgName: organizations.name,
       tier: partners.tier,
@@ -110,10 +115,12 @@ export async function getPartnerById(partnerId: string): Promise<PartnerContext 
 }
 
 // The partner console the current viewer should see: the "act as" partner for a
-// staff developer (as admin), otherwise the user's own membership.
+// staff developer (as admin), otherwise the user's own membership. While a staff
+// dev is impersonating a persona WITHOUT a partner context, they see no partner —
+// the real account's own membership must not leak into every persona.
 export async function resolveViewerPartner(userId: string): Promise<PartnerContext | null> {
   const actAs = await getActAs()
-  if (actAs?.partnerId) return getPartnerById(actAs.partnerId)
+  if (actAs) return actAs.partnerId ? getPartnerById(actAs.partnerId, actAs.partnerRole) : null
   return getPartnerForUser(userId)
 }
 

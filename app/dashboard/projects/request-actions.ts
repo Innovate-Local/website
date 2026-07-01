@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { requireProfile, requireRole } from '@/lib/auth/session'
-import { getPrimaryOrgForUser } from '@/lib/platform/credits'
+import { resolveViewerOrg } from '@/lib/platform/credits'
 import {
   createRequest,
   convertRequest,
@@ -19,7 +19,7 @@ function revalidate() {
 // Org member: submit a project request for their organization (staff review it).
 export async function submitProjectRequest(formData: FormData): Promise<ActionResult> {
   const me = await requireProfile()
-  const org = await getPrimaryOrgForUser(me.id)
+  const org = await resolveViewerOrg(me.id)
   if (!org) return { ok: false, error: 'You’re not part of an organization yet.' }
 
   const title = String(formData.get('title') ?? '').trim()
