@@ -42,6 +42,7 @@ export function navForRole(role: UserRole): NavItem[] {
         { href: '/dashboard/credits', label: 'Credits' },
         { href: '/dashboard/people', label: 'People' },
         { href: '/dashboard/organizations', label: 'Organizations' },
+        { href: '/dashboard/partners', label: 'Partners' },
         profile,
       ]
     case 'apprentice':

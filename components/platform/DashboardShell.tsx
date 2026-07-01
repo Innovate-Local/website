@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import type { Profile } from '@/lib/db/schema'
 import { navForRole } from '@/lib/platform/roles'
+import { getPartnerForUser } from '@/lib/platform/partners'
 import { RoleBadge } from './RoleBadge'
 import { DashboardNav } from './DashboardNav'
 
 // Authenticated app frame: brand + role + nav in a sidebar (desktop) / header
 // (mobile), with the page content beside it. Server component; the only
 // interactive piece (active-link highlighting) lives in DashboardNav.
-export function DashboardShell({
+export async function DashboardShell({
   profile,
   children,
 }: {
@@ -15,6 +16,15 @@ export function DashboardShell({
   children: React.ReactNode
 }) {
   const items = navForRole(profile.role)
+
+  // Authorized users on a Community Innovation Partner get a console link,
+  // regardless of their platform role. Slot it in before Profile (last item).
+  if (profile.role !== 'hub_staff' && (await getPartnerForUser(profile.id))) {
+    items.splice(Math.max(0, items.length - 1), 0, {
+      href: '/dashboard/partner',
+      label: 'Partner Console',
+    })
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-surface">

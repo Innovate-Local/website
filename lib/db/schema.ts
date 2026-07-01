@@ -388,6 +388,151 @@ export const payments = pgTable(
   }),
 )
 
+// ===========================================================================
+// Community Innovation Partners (CIP). Mirrors
+// supabase/migrations/20260701120000_community_innovation_partners.sql. Keep the
+// string unions in sync with that file's CHECK constraints.
+// ===========================================================================
+
+// partners — an organization designated as a Community Innovation Partner, with
+// an annual credit allocation for a cycle and its governance policy.
+export const partners = pgTable(
+  'partners',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    tier: text('tier').notNull().default('Founding Community Innovation Partner'),
+    annualAllocation: integer('annual_allocation').notNull().default(0),
+    cycleStart: date('cycle_start'),
+    cycleEnd: date('cycle_end'),
+    footprint: text('footprint'),
+    redemptionWindowDays: integer('redemption_window_days').notNull().default(180),
+    drafterLimit: integer('drafter_limit').notNull().default(8),
+    approverLimit: integer('approver_limit').notNull().default(32),
+    dualSignoffThreshold: integer('dual_signoff_threshold').notNull().default(32),
+    status: text('status').$type<'active' | 'inactive'>().notNull().default('active'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index('partners_org_idx').on(t.orgId),
+  }),
+)
+
+// partner_members — authorized users on a partner console (admin/approver/drafter).
+export const partnerMembers = pgTable(
+  'partner_members',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').notNull(),
+    partnerRole: text('partner_role')
+      .$type<'admin' | 'approver' | 'drafter'>()
+      .notNull()
+      .default('drafter'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    partnerIdx: index('partner_members_partner_idx').on(t.partnerId),
+    userIdx: index('partner_members_user_idx').on(t.userId),
+  }),
+)
+
+// partner_recipients — departments (kind='internal') + external orgs receiving
+// partner credits; linked_org_id ties one to a platform organization when matched.
+export const partnerRecipients = pgTable(
+  'partner_recipients',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    kind: text('kind')
+      .$type<'business' | 'nonprofit' | 'municipality' | 'chamber' | 'internal'>()
+      .notNull(),
+    name: text('name').notNull(),
+    contactName: text('contact_name'),
+    contactEmail: text('contact_email'),
+    relationshipManager: text('relationship_manager'),
+    linkedOrgId: uuid('linked_org_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    partnerIdx: index('partner_recipients_partner_idx').on(t.partnerId),
+  }),
+)
+
+// partner_redemption_codes — one code per external transfer; redeemed at /redeem.
+export const partnerRedemptionCodes = pgTable(
+  'partner_redemption_codes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    recipientId: uuid('recipient_id').references(() => partnerRecipients.id, {
+      onDelete: 'set null',
+    }),
+    code: text('code').notNull().unique(),
+    amount: integer('amount').notNull(),
+    remaining: integer('remaining').notNull(),
+    engagementSuggestion: text('engagement_suggestion'),
+    message: text('message'),
+    relationshipManager: text('relationship_manager'),
+    expiresAt: date('expires_at'),
+    status: text('status')
+      .$type<'issued' | 'partially_redeemed' | 'redeemed' | 'expired' | 'reclaimed'>()
+      .notNull()
+      .default('issued'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    partnerIdx: index('partner_codes_partner_idx').on(t.partnerId),
+    codeIdx: index('partner_codes_code_idx').on(t.code),
+  }),
+)
+
+// partner_credit_events — append-only ledger of every partner credit movement.
+export const partnerCreditEvents = pgTable(
+  'partner_credit_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    partnerId: uuid('partner_id')
+      .notNull()
+      .references(() => partners.id, { onDelete: 'cascade' }),
+    recipientId: uuid('recipient_id').references(() => partnerRecipients.id, {
+      onDelete: 'set null',
+    }),
+    eventType: text('event_type')
+      .$type<'allocation' | 'assign' | 'transfer' | 'redeem' | 'reclaim'>()
+      .notNull(),
+    amount: integer('amount').notNull(),
+    engagementKey: text('engagement_key'),
+    redemptionType: text('redemption_type'),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    projectLabel: text('project_label'),
+    status: text('status'),
+    codeId: uuid('code_id').references(() => partnerRedemptionCodes.id, { onDelete: 'set null' }),
+    authorizedBy: uuid('authorized_by'),
+    authorizedByName: text('authorized_by_name'),
+    note: text('note'),
+    eventDate: date('event_date').notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    partnerIdx: index('partner_events_partner_idx').on(t.partnerId),
+    recipientIdx: index('partner_events_recipient_idx').on(t.recipientId),
+    createdIdx: index('partner_events_created_idx').on(t.createdAt),
+  }),
+)
+
 // Inferred row types for use across the app.
 export type Inquiry = typeof inquiries.$inferSelect
 export type Student = typeof students.$inferSelect
@@ -416,3 +561,13 @@ export type ProjectRequest = typeof projectRequests.$inferSelect
 export type NewProjectRequest = typeof projectRequests.$inferInsert
 export type ProjectDeliverable = typeof projectDeliverables.$inferSelect
 export type NewProjectDeliverable = typeof projectDeliverables.$inferInsert
+export type Partner = typeof partners.$inferSelect
+export type NewPartner = typeof partners.$inferInsert
+export type PartnerMember = typeof partnerMembers.$inferSelect
+export type NewPartnerMember = typeof partnerMembers.$inferInsert
+export type PartnerRecipient = typeof partnerRecipients.$inferSelect
+export type NewPartnerRecipient = typeof partnerRecipients.$inferInsert
+export type PartnerRedemptionCode = typeof partnerRedemptionCodes.$inferSelect
+export type NewPartnerRedemptionCode = typeof partnerRedemptionCodes.$inferInsert
+export type PartnerCreditEvent = typeof partnerCreditEvents.$inferSelect
+export type NewPartnerCreditEvent = typeof partnerCreditEvents.$inferInsert
