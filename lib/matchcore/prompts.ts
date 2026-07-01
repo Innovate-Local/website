@@ -8,47 +8,70 @@ import type { JsonSchema } from '@/lib/ai/client'
 import { activeCompetencyRubric, activeComplexityRubric, sectionMax } from './config'
 import { PROJECT_TYPES } from './types'
 
-// Emitted by an interviewer on its own line once every topic is covered and the
-// interviewee has nothing to add. The UI watches for it to offer "Finish".
-export const INTERVIEW_DONE_TOKEN = '[[INTERVIEW_COMPLETE]]'
+type InterviewKind = 'competency' | 'complexity'
 
 // ---------------------------------------------------------------------------
-// Interviewer system prompts (conversational turn)
+// Interviewer (conversational turn)
+//
+// Flow control is DETERMINISTIC and lives in code (agents.ts), not the model.
+// A reasoning model can't reliably count follow-ups or track progress across
+// dozens of turns — left to decide for itself it runs away and loses track of
+// what it's doing. So each turn we tell the model exactly which topic it's on
+// and whether this is the opening question or the single follow-up; the app
+// advances topics and ends the interview after QUESTIONS_PER_TOPIC × topics
+// questions. The model's only job is to phrase one good question.
 // ---------------------------------------------------------------------------
 
-function sharedInterviewRules(agentName: string, topics: string): string {
+// Questions asked per topic: one opening question + up to one follow-up.
+// Total interview length = this × number of topics (5) = 10 questions.
+export const QUESTIONS_PER_TOPIC = 2
+
+// The ordered topics for a kind, drawn from the live rubric.
+export function interviewTopics(kind: InterviewKind): { label: string; focus: string }[] {
+  return kind === 'competency'
+    ? activeCompetencyRubric().sections.map((s) => ({ label: s.label, focus: s.focus }))
+    : activeComplexityRubric().briefs.map((b) => ({ label: b.title, focus: b.focus }))
+}
+
+function persona(kind: InterviewKind): string {
+  return kind === 'competency'
+    ? `You are ${activeCompetencyRubric().agentName}, a warm, encouraging interviewer building an apprentice's InnovateLocal profile. This is a friendly conversation, not an exam.`
+    : `You are ${activeComplexityRubric().agentName}, a consultative business-discovery guide helping a business articulate a challenge so it can be scoped. Be professional and genuinely curious, and probe for specifics (numbers, systems, volumes, names).`
+}
+
+// System prompt for a single interview turn. The current topic + position are
+// injected so the model stays oriented; it must not wander or wrap up itself.
+export function interviewTurnPrompt(
+  kind: InterviewKind,
+  ctx: { topicLabel: string; topicFocus: string; topicNumber: number; topicTotal: number; isFollowUp: boolean },
+): string {
   return [
-    `You are ${agentName}, a warm, encouraging InnovateLocal interview assistant. This is a friendly profile-building conversation, NOT an exam.`,
+    persona(kind),
     '',
-    'Rules:',
-    '- Work through the topics in order. Give a one-line transition between topics.',
-    '- Ask ONE focused question at a time. Ask at most two brief follow-up probes per topic, then move on.',
-    '- Never mention scores, points, rubrics, or that any evaluation is happening. Scoring is silent and happens later.',
-    `- If they say "I don't know" or "I haven't done that", accept it gracefully and move on — never make them feel judged.`,
-    '- Keep each message short and natural. No headers, no bullet lists in your replies.',
-    `- When every topic has been covered and they have nothing to add, thank them warmly and then output ${INTERVIEW_DONE_TOKEN} on its very last line by itself.`,
+    `This is a structured interview of ${ctx.topicTotal} topics asked in a fixed order that the SYSTEM controls — you do not decide when to change topic or when to finish.`,
+    `You are on topic ${ctx.topicNumber} of ${ctx.topicTotal}: "${ctx.topicLabel}" — ${ctx.topicFocus}`,
     '',
-    'Topics to cover, in order:',
-    topics,
+    ctx.isFollowUp
+      ? 'Ask ONE brief follow-up that digs into something specific the person just said about THIS topic. If they already covered it thoroughly, ask a light clarifying question instead of forcing more depth.'
+      : 'Ask ONE clear opening question about THIS topic. A one-line transition from the previous answer is fine.',
+    '',
+    'Strict rules:',
+    '- Ask about the CURRENT topic only. Never jump to other topics — the system advances them for you.',
+    '- Do NOT summarize the conversation, do NOT thank-and-close, do NOT announce topic numbers.',
+    '- Keep it to 1–2 warm, natural sentences. Output ONLY the question — no preamble, no labels, no lists.',
+    '- Never mention scores, points, rubrics, or that anything is being evaluated.',
+    `- If they say "I don't know" or "I haven't done that", accept it gracefully — never make them feel judged.`,
+    '- If they ask a logistics/meta question (e.g. how many questions are left, how long this takes), answer it honestly in one short sentence, then ask your question for the current topic.',
   ].join('\n')
 }
 
-export function competencyInterviewSystemPrompt(): string {
-  const rubric = activeCompetencyRubric()
-  const topics = rubric.sections
-    .map((s, i) => `${i + 1}. ${s.label} — ${s.focus}`)
-    .join('\n')
-  return sharedInterviewRules(rubric.agentName, topics)
-}
-
-export function complexityInterviewSystemPrompt(): string {
-  const rubric = activeComplexityRubric()
-  const topics = rubric.briefs.map((b, i) => `${i + 1}. ${b.title} — ${b.focus}`).join('\n')
-  const base = sharedInterviewRules(rubric.agentName, topics)
-  return base.replace(
-    'This is a friendly profile-building conversation, NOT an exam.',
-    'You are a consultative business-discovery guide helping a business articulate a challenge so it can be scoped. Be professional and genuinely curious. Let them speak freely and probe for specifics (numbers, systems, names, volumes).',
-  )
+// Deterministic closing line (no model call) shown once the fixed number of
+// questions has been asked. The UI then surfaces "Finish & score".
+export const interviewClosing: Record<InterviewKind, string> = {
+  competency:
+    'That’s everything I need — thank you for walking me through all of it. Click “Finish & score” whenever you’re ready and I’ll build your profile.',
+  complexity:
+    'That covers everything I need to scope this well — thank you. Click “Finish & score” to generate the complexity assessment.',
 }
 
 export const interviewGreeting = {

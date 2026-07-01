@@ -10,13 +10,14 @@
 
 import { aiChat, aiStructured, type ChatMessage } from '@/lib/ai/client'
 import {
-  INTERVIEW_DONE_TOKEN,
+  QUESTIONS_PER_TOPIC,
   competencyExtractionSchema,
   competencyExtractionSystemPrompt,
-  competencyInterviewSystemPrompt,
   complexityExtractionSchema,
   complexityExtractionSystemPrompt,
-  complexityInterviewSystemPrompt,
+  interviewClosing,
+  interviewTopics,
+  interviewTurnPrompt,
 } from './prompts'
 import { scoreCompetency, scoreComplexity, type RawCompetencySignals, type RawComplexitySignals } from './scoring'
 import type { CompetencyResult, ComplexityResult, InterviewMessage } from './types'
@@ -24,26 +25,45 @@ import type { CompetencyResult, ComplexityResult, InterviewMessage } from './typ
 export type { InterviewMessage } from './types'
 export type InterviewKind = 'competency' | 'complexity'
 
-function interviewSystemPrompt(kind: InterviewKind): string {
-  return kind === 'competency' ? competencyInterviewSystemPrompt() : complexityInterviewSystemPrompt()
-}
-
 /**
- * Produce the interviewer's next reply given the conversation so far. Returns
- * the cleaned message plus whether the interview signalled completion.
+ * Produce the interviewer's next reply. Flow control is deterministic: the
+ * number of questions already asked (assistant turns, minus the greeting)
+ * decides the current topic and whether the interview is over — the model never
+ * decides that. Once the fixed question budget is spent we return a canned
+ * closing with done:true (no model call), and the UI offers "Finish & score".
  */
 export async function nextInterviewTurn(
   kind: InterviewKind,
   history: InterviewMessage[],
 ): Promise<{ message: string; done: boolean }> {
+  const topics = interviewTopics(kind)
+  const total = topics.length * QUESTIONS_PER_TOPIC
+
+  // Questions asked so far = assistant turns excluding the seeded greeting.
+  const askedQuestions = Math.max(0, history.filter((m) => m.role === 'assistant').length - 1)
+  if (askedQuestions >= total) {
+    return { message: interviewClosing[kind], done: true }
+  }
+
+  const topicIdx = Math.floor(askedQuestions / QUESTIONS_PER_TOPIC)
+  const isFollowUp = askedQuestions % QUESTIONS_PER_TOPIC !== 0
+  const topic = topics[topicIdx]
+
   const messages: ChatMessage[] = [
-    { role: 'system', content: interviewSystemPrompt(kind) },
+    {
+      role: 'system',
+      content: interviewTurnPrompt(kind, {
+        topicLabel: topic.label,
+        topicFocus: topic.focus,
+        topicNumber: topicIdx + 1,
+        topicTotal: topics.length,
+        isFollowUp,
+      }),
+    },
     ...history.map((m) => ({ role: m.role, content: m.content }) as ChatMessage),
   ]
-  const raw = await aiChat(messages, { maxTokens: 1200 })
-  const done = raw.includes(INTERVIEW_DONE_TOKEN)
-  const message = raw.replaceAll(INTERVIEW_DONE_TOKEN, '').trim()
-  return { message, done }
+  const raw = await aiChat(messages, { maxTokens: 800 })
+  return { message: raw.trim(), done: false }
 }
 
 function transcriptText(history: InterviewMessage[]): string {
