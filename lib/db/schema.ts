@@ -203,7 +203,14 @@ export const projectRequests = pgTable(
     title: text('title').notNull(),
     summary: text('summary'),
     problemStatement: text('problem_statement'),
-    status: text('status').$type<'open' | 'converted' | 'declined'>().notNull().default('open'),
+    // AI-drafted (or manually-entered) project fields carried into the project
+    // on convert. Added 20260701140000.
+    description: text('description'),
+    skillsNeeded: text('skills_needed').array().notNull().default([]),
+    status: text('status')
+      .$type<'drafting' | 'open' | 'converted' | 'declined'>()
+      .notNull()
+      .default('open'),
     declineReason: text('decline_reason'),
     projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
     reviewedBy: uuid('reviewed_by'),
@@ -576,9 +583,10 @@ export const projectDiscoveries = pgTable(
   'project_discoveries',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    projectId: uuid('project_id')
-      .notNull()
-      .references(() => projects.id, { onDelete: 'cascade' }),
+    // A discovery attaches to a project OR (during the org describe flow, before
+    // a project exists) a request; convert relinks it to the project.
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }),
+    requestId: uuid('request_id').references(() => projectRequests.id, { onDelete: 'cascade' }),
     rubricVersion: text('rubric_version').notNull(),
     status: text('status')
       .$type<'in_progress' | 'scored' | 'approved' | 'archived'>()
@@ -601,6 +609,7 @@ export const projectDiscoveries = pgTable(
   },
   (t) => ({
     projectIdx: index('project_discoveries_project_idx').on(t.projectId),
+    requestIdx: index('project_discoveries_request_idx').on(t.requestId),
     statusIdx: index('project_discoveries_status_idx').on(t.status),
   }),
 )

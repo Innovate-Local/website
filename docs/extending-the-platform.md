@@ -500,3 +500,28 @@ Note: matching currently pools **scored or approved** apprentices (see
 `generateMatchAction`, `approvedOnly:false`) so it's usable before every profile
 is approved — the consequential gate is approving the *match* (which staffs the
 team). Flip to `approvedOnly:true` to require per-profile approval first.
+
+### Org "Describe a project with MatchCore"
+
+Org **admins** (and staff acting as one — the flow authorizes via
+`resolveViewerOrg().roleInOrg === 'admin'`, so it's "act as"-aware) can build a
+project by talking to Scout instead of filling a form. `/dashboard/projects/describe`:
+
+1. Starts a **`project_request` in a new `drafting` status** (hidden from the
+   staff open-queue) with a discovery attached to the *request* (discovery's
+   `project_id` is now nullable; a `request_id` links it — migration
+   `20260701140000`).
+2. Runs the same Scout interview (`MatchcoreInterview`, deterministic flow).
+3. On finish, ONE conversation yields TWO extractions in parallel:
+   `extractProjectDraft` → the request's fields (title/summary/problem/description/
+   skills — org-facing, editable) and `extractComplexity` → the internal PCS
+   (staff-facing, hidden from the org).
+4. The org reviews/edits every field (`DescribeReviewForm`) — manual typing always
+   works — then **submits** (`drafting → open`).
+5. Staff `convertRequest` the open request → a project **pre-filled** with the
+   drafted fields, and the discovery is **relinked** to the new project so the
+   matching engine uses it without redoing discovery.
+
+Decisions baked in (changeable): the flow produces a **request** (not a direct
+project), the **PCS is hidden from the org**, and **only staff run the matching
+engine**. The manual counterpart (`ProjectRequestForm`) is unchanged.

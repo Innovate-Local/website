@@ -112,6 +112,16 @@ export type CompetencyResult = {
 
 export type DimensionScore = { dimension: string; label: string; points: number; max: number; rationale: string }
 
+// A project drafted by the AI from a discovery conversation — the fields an org
+// admin submits as a request (and that convert carries into the project).
+export type ProjectDraft = {
+  title: string
+  summary: string
+  problemStatement: string
+  description: string
+  skillsNeeded: string[]
+}
+
 export type ComplexityResult = {
   rubricVersion: string
   dimensions: DimensionScore[]

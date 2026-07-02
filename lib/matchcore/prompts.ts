@@ -151,6 +151,37 @@ export function complexityExtractionSystemPrompt(): string {
   ].join('\n')
 }
 
+// Project draft extraction: turn the discovery conversation into ready-to-submit
+// project fields for the org (separate from the internal complexity scoring).
+export function projectDraftSystemPrompt(): string {
+  return [
+    'You are drafting a project an organization will submit to InnovateLocal, based on the discovery conversation below.',
+    'Produce clean, ready-to-submit fields that are FAITHFUL to what the business actually said. Do not invent specifics (names, numbers, systems, deadlines) they did not mention. Write plainly, in the business’s own voice.',
+    'Fields:',
+    '- title: a short, specific project title (roughly 3–8 words).',
+    '- summary: 1–2 sentence plain-language description of what the project is.',
+    '- problemStatement: the core problem or opportunity, in the business’s terms.',
+    '- description: scope and approach — what would be built/automated and the intended outcome (2–5 sentences).',
+    '- skillsNeeded: a short list of relevant skills/technologies (e.g. "Python", "API integration", "data cleaning"). Empty list if genuinely unclear.',
+  ].join('\n')
+}
+
+export const projectDraftSchema: { name: string; schema: JsonSchema } = {
+  name: 'project_draft',
+  schema: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['title', 'summary', 'problemStatement', 'description', 'skillsNeeded'],
+    properties: {
+      title: { type: 'string' },
+      summary: { type: 'string' },
+      problemStatement: { type: 'string' },
+      description: { type: 'string' },
+      skillsNeeded: { type: 'array', items: { type: 'string' } },
+    },
+  },
+}
+
 export const complexityExtractionSchema: { name: string; schema: JsonSchema } = {
   name: 'complexity_assessment',
   schema: {

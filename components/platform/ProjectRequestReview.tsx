@@ -84,6 +84,24 @@ export function ProjectRequestReview({ requests }: { requests: RequestRow[] }) {
             {req.problemStatement && (
               <p className="font-body text-sm text-on-surface-variant whitespace-pre-wrap">{req.problemStatement}</p>
             )}
+            {req.description && (
+              <div className="flex flex-col gap-1">
+                <span className="font-label text-xs uppercase tracking-widest text-on-surface-variant">Scope &amp; approach</span>
+                <p className="font-body text-sm text-on-surface-variant whitespace-pre-wrap">{req.description}</p>
+              </div>
+            )}
+            {req.skillsNeeded.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {req.skillsNeeded.map((s) => (
+                  <span
+                    key={s}
+                    className="bg-surface-container-high px-3 py-1 font-label text-[10px] uppercase tracking-wider text-on-surface-variant"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
             {decliningId === req.id && (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                 <input

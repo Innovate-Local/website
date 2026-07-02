@@ -73,8 +73,20 @@ export default async function OrganizationPage() {
           <h2 className="font-headline text-2xl text-on-surface">
             Projects <span className="text-on-surface-variant">({projects.length})</span>
           </h2>
-          {/* Admins create directly; members request and staff review. */}
-          {isAdmin ? <OrgProjectCreateForm /> : <ProjectRequestForm />}
+          {/* Admins create directly or describe with MatchCore; members request. */}
+          {isAdmin ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/dashboard/projects/describe"
+                className="bg-primary hover:bg-primary-container text-on-primary font-label text-sm uppercase tracking-widest font-bold py-4 px-8 transition-colors"
+              >
+                ✦ Describe with MatchCore
+              </Link>
+              <OrgProjectCreateForm />
+            </div>
+          ) : (
+            <ProjectRequestForm />
+          )}
         </div>
         {projects.length === 0 ? (
           <p className="bg-surface-container-low p-8 font-body text-on-surface-variant">

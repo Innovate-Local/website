@@ -18,9 +18,11 @@ import {
   interviewClosing,
   interviewTopics,
   interviewTurnPrompt,
+  projectDraftSchema,
+  projectDraftSystemPrompt,
 } from './prompts'
 import { scoreCompetency, scoreComplexity, type RawCompetencySignals, type RawComplexitySignals } from './scoring'
-import type { CompetencyResult, ComplexityResult, InterviewMessage } from './types'
+import type { CompetencyResult, ComplexityResult, InterviewMessage, ProjectDraft } from './types'
 
 export type { InterviewMessage } from './types'
 export type InterviewKind = 'competency' | 'complexity'
@@ -80,6 +82,27 @@ export async function extractCompetency(history: InterviewMessage[]): Promise<Co
     { maxTokens: 4096 },
   )
   return scoreCompetency(raw)
+}
+
+// Draft submittable project fields from a discovery transcript. Kept separate
+// from complexity scoring so the org sees a clean project while staff get the
+// internal PCS from the same conversation.
+export async function extractProjectDraft(history: InterviewMessage[]): Promise<ProjectDraft> {
+  const raw = await aiStructured<ProjectDraft>(
+    [
+      { role: 'system', content: projectDraftSystemPrompt() },
+      { role: 'user', content: `Discovery transcript:\n\n${transcriptText(history)}` },
+    ],
+    projectDraftSchema,
+    { maxTokens: 2048 },
+  )
+  return {
+    title: raw.title?.trim() || 'Untitled project',
+    summary: raw.summary?.trim() || '',
+    problemStatement: raw.problemStatement?.trim() || '',
+    description: raw.description?.trim() || '',
+    skillsNeeded: (raw.skillsNeeded ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 20),
+  }
 }
 
 export async function extractComplexity(history: InterviewMessage[]): Promise<ComplexityResult> {

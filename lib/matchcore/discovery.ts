@@ -46,6 +46,32 @@ export async function startDiscovery(projectId: string): Promise<string> {
   return row.id
 }
 
+// --- Request-linked discovery (org "Describe with MatchCore" flow) -----------
+// Discovery runs against a project_request before any project exists; convert
+// relinks it to the new project (see convertRequest).
+export async function startRequestDiscovery(requestId: string): Promise<string> {
+  const db = getDb()
+  await db
+    .update(projectDiscoveries)
+    .set({ status: 'archived' })
+    .where(and(eq(projectDiscoveries.requestId, requestId), eq(projectDiscoveries.status, 'in_progress')))
+  const [row] = await db
+    .insert(projectDiscoveries)
+    .values({ requestId, rubricVersion: activeComplexityRubric().version, status: 'in_progress' })
+    .returning({ id: projectDiscoveries.id })
+  return row.id
+}
+
+export async function getRequestDiscovery(requestId: string): Promise<ProjectDiscovery | null> {
+  const [row] = await getDb()
+    .select()
+    .from(projectDiscoveries)
+    .where(and(eq(projectDiscoveries.requestId, requestId), ne(projectDiscoveries.status, 'archived')))
+    .orderBy(desc(projectDiscoveries.createdAt))
+    .limit(1)
+  return row ?? null
+}
+
 export async function saveTranscript(id: string, messages: InterviewMessage[]): Promise<void> {
   await getDb().update(projectDiscoveries).set({ transcript: messages }).where(eq(projectDiscoveries.id, id))
 }
