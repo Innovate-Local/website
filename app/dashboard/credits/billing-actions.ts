@@ -1,8 +1,8 @@
 'use server'
 
 import { headers } from 'next/headers'
-import { isRealStaff, requireProfile } from '@/lib/auth/session'
-import { resolveViewerOrg, isOrgAdmin } from '@/lib/platform/credits'
+import { requireProfile } from '@/lib/auth/session'
+import { resolveViewerOrg } from '@/lib/platform/credits'
 import {
   createSubscriptionCheckout,
   createTopupCheckout,
@@ -19,12 +19,12 @@ async function origin(): Promise<string> {
 }
 
 // The buying org is the acting user's organization; only its admins may pay.
+// Authorized off the RESOLVED org role, so it's "act as"-faithful.
 async function buyerOrg(): Promise<{ orgId: string; userId: string } | { error: string }> {
   const me = await requireProfile()
   const org = await resolveViewerOrg(me.id)
   if (!org) return { error: 'You’re not part of an organization yet.' }
-  const allowed = (await isRealStaff()) || (await isOrgAdmin(me.id, org.orgId))
-  if (!allowed) return { error: 'Only organization admins can manage billing.' }
+  if (org.roleInOrg !== 'admin') return { error: 'Only organization admins can manage billing.' }
   return { orgId: org.orgId, userId: me.id }
 }
 

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
-import { isRealStaff, requireProfile, requireRole } from '@/lib/auth/session'
+import { requireProfile, requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import { projects, projectAssignments, projectInterests } from '@/lib/db/schema'
 import {
@@ -10,7 +10,7 @@ import {
   getDefaultHubId,
   type ProjectStatus,
 } from '@/lib/platform/projects'
-import { resolveViewerOrg, isOrgAdmin } from '@/lib/platform/credits'
+import { resolveViewerOrg } from '@/lib/platform/credits'
 import { parseTags } from '@/lib/platform/apprentice-fields'
 import { PROJECT_LINK_FIELDS } from '@/lib/platform/project-fields'
 
@@ -68,16 +68,15 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
   return { ok: true, id: proj.id }
 }
 
-// Org admin (or staff): create a project for the acting user's own organization
-// (starts in 'intake'). The org is server-derived — never taken from the form.
-// resolveViewerOrg honours a staff dev's "act as" org; the staff bypass uses the
-// REAL role so impersonating an org member keeps full access for testing.
+// Org admin: create a project for the acting user's own organization (starts in
+// 'intake'). The org is server-derived — never taken from the form. Authorized
+// off the RESOLVED org role, so it's "act as"-faithful: acting as an org admin
+// works, acting as a plain member does not.
 export async function createOrgProject(formData: FormData): Promise<ActionResult> {
   const me = await requireProfile()
   const org = await resolveViewerOrg(me.id)
   if (!org) return { ok: false, error: 'You’re not part of an organization yet.' }
-  const allowed = (await isRealStaff()) || (await isOrgAdmin(me.id, org.orgId))
-  if (!allowed) return { ok: false, error: 'Only organization admins can create projects.' }
+  if (org.roleInOrg !== 'admin') return { ok: false, error: 'Only organization admins can create projects.' }
 
   const title = String(formData.get('title') ?? '').trim()
   if (!title) return { ok: false, error: 'A project title is required.' }

@@ -12,7 +12,7 @@ import {
   projects,
   profiles,
 } from '@/lib/db/schema'
-import { getActAs } from '@/lib/auth/session'
+import { getActAs, getProfile } from '@/lib/auth/session'
 import type { OrgRole } from './roles'
 import type { ProjectStatus } from './project-status'
 import type { CreditKind } from './credit-kinds'
@@ -241,6 +241,23 @@ export async function isOrgAdmin(userId: string, orgId: string): Promise<boolean
     .where(and(eq(organizationMembers.userId, userId), eq(organizationMembers.orgId, orgId)))
     .limit(1)
   return m?.role === 'admin'
+}
+
+// Act-as-aware authorization: may the current viewer administer this org?
+// Keys off EFFECTIVE identity so the persona is faithful:
+//   • effective hub_staff (real staff not impersonating a lesser role, incl.
+//     "act as staff") → true, so the staff console can manage any org;
+//   • otherwise the viewer's RESOLVED org (the "act as" org for a staff dev,
+//     else their own) must be this org, as admin.
+// A staff dev acting as a plain member is therefore denied admin actions — that
+// is the point: under "act as", capability matches the persona, not the real
+// account. Staff regain full power by exiting "act as".
+export async function viewerCanAdminOrg(orgId: string): Promise<boolean> {
+  const profile = await getProfile()
+  if (!profile) return false
+  if (profile.role === 'hub_staff') return true
+  const org = await resolveViewerOrg(profile.id)
+  return !!org && org.orgId === orgId && org.roleInOrg === 'admin'
 }
 
 export type OrgMemberRow = {

@@ -81,9 +81,13 @@ export async function getActAs(): Promise<ActAsState | null> {
   return readActAsCookie()
 }
 
-// True when the real signed-in user is hub_staff, regardless of any active
-// persona. Use for authorization bypasses so staff keep their powers while
-// acting as another role.
+// True when the real signed-in account is hub_staff, regardless of any active
+// persona. This is a TRUE-IDENTITY check — use it only for things that are about
+// the real account (e.g. whether to offer the "act as" switcher), NOT for
+// authorization. Authorization is persona-faithful: gate on the EFFECTIVE role
+// (getProfile/requireRole) and the resolved org/partner context (resolveViewerOrg
+// / resolveViewerPartner / viewerCanAdminOrg), so acting as a lesser role
+// genuinely restricts capability. Staff regain full power by exiting "act as".
 export async function isRealStaff(): Promise<boolean> {
   const real = await getRealProfile()
   return real?.role === 'hub_staff'

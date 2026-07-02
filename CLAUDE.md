@@ -46,11 +46,15 @@ Before non-trivial work, skim the doc that matches the task:
   `lib/platform/*` (queries + domain logic; pure constants in a separate no-DB
   file) → `'use server'` actions (start with `requireRole/requireProfile`, return
   `{ ok } | { ok:false, error }`, `revalidatePath`) → server page → client form.
-- **Auth:** `lib/auth/session.ts`. `getProfile()`/`requireRole()` are the
-  **effective** identity (honour the staff "act as" persona); `getRealProfile()`/
-  `isRealStaff()` are the true account — **authorization bypasses use the real
-  role**. For anything scoped to "the current user's org/partner," use
-  `resolveViewerOrg` / `resolveViewerPartner` so it works under "act as".
+- **Auth:** `lib/auth/session.ts`. Authorization is **persona-faithful** — gate on
+  the **effective** identity: `getProfile()`/`requireRole()` (effective role) and
+  the resolved org/partner context (`resolveViewerOrg`/`resolveViewerPartner`, and
+  `viewerCanAdminOrg` for org-admin actions; partner actions gate on
+  `resolveViewerPartner().partnerRole`). Under "act as", capability matches the
+  persona — acting as a plain member can't do admin things; staff regain full power
+  by **exiting** "act as". `getRealProfile()`/`isRealStaff()` are the true account —
+  use them **only** for true-identity questions (e.g. whether to show the "act as"
+  switcher), **never** as an authorization bypass.
 - **UI:** Modern Bureau design tokens (CSS vars → Tailwind classes; **square
   corners, no border-radius**). Use tokens, not raw hex. Lead pages with
   `PageHeader`; build forms from `components/platform/styles.ts`. **Gotcha:** no

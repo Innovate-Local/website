@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache'
 import { and, eq } from 'drizzle-orm'
-import { isRealStaff, requireProfile, requireRole } from '@/lib/auth/session'
+import { requireProfile, requireRole } from '@/lib/auth/session'
 import { getDb } from '@/lib/db'
 import { organizations, organizationMembers, profiles } from '@/lib/db/schema'
+import { viewerCanAdminOrg } from '@/lib/platform/credits'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string }
@@ -13,19 +14,12 @@ export type AddMemberResult = { ok: true; invited: boolean } | { ok: false; erro
 const ORG_TYPES = ['business', 'nonprofit', 'municipality', 'other'] as const
 const ORG_ROLES = ['admin', 'member'] as const
 
-// May the current user manage this org's people — hub staff, or an admin of the
-// org itself. Returns the profile (used as authorizedBy etc.) or null.
+// May the current user manage this org's people — effective hub staff (staff
+// console), or an admin of the org itself. "Act as"-faithful via viewerCanAdminOrg:
+// impersonating a plain member no longer grants management rights.
 async function orgManager(orgId: string): Promise<{ id: string } | null> {
   const profile = await requireProfile()
-  // Real staff keep management rights even while "acting as" an org member.
-  if (await isRealStaff()) return profile
-  const db = getDb()
-  const [m] = await db
-    .select({ role: organizationMembers.roleInOrg })
-    .from(organizationMembers)
-    .where(and(eq(organizationMembers.orgId, orgId), eq(organizationMembers.userId, profile.id)))
-    .limit(1)
-  return m?.role === 'admin' ? profile : null
+  return (await viewerCanAdminOrg(orgId)) ? profile : null
 }
 
 // Count of admins on an org — used to prevent removing the last one (lockout).

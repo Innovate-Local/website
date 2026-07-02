@@ -451,11 +451,22 @@ Staff-only, in `lib/auth/session.ts` + `components/platform/ActAsBar.tsx`.
   privilege. A bar (rendered in `DashboardShell`) shows the active persona with a
   one-click Exit.
 - Key helpers: `getProfile()` returns the **effective** profile (role overridden)
-  → drives nav + page gating + which portal renders. `getRealProfile()` /
-  `isRealStaff()` give the true identity — **authorization bypasses key off the
-  real role**, so staff keep their powers while impersonating. `getActAs()` is the
-  guarded persona. Context resolvers `resolveViewerOrg` / `resolveViewerPartner`
-  return the acted-as org/partner (as admin) or fall back to the user's own.
+  → drives nav + page gating + which portal renders. `getActAs()` is the guarded
+  persona (role + org/partner context + the persona's `orgRole`/`partnerRole`).
+  Context resolvers `resolveViewerOrg` / `resolveViewerPartner` return the acted-as
+  org/partner **with the persona's in-context role** (else the user's own).
+- **Authorization is persona-faithful** (as of the act-as-awareness pass): every
+  gate keys off the **effective** identity, never the real account. So acting as a
+  plain org member genuinely can't do org-admin actions; acting as a partner
+  drafter is held to drafter limits; etc. Staff regain full power by **exiting**
+  act-as, not by a bypass.
+  - Role gates: `requireRole(...)` / `getProfile().role` (effective).
+  - Org-admin actions: `viewerCanAdminOrg(orgId)` (effective staff **or** the
+    resolved org, as admin) — or, when acting on the viewer's own resolved org,
+    `resolveViewerOrg().roleInOrg === 'admin'`.
+  - Partner actions: `resolveViewerPartner().partnerRole`.
+  - `getRealProfile()` / `isRealStaff()` are **true-identity only** (e.g. deciding
+    whether to render the switcher) — do **not** use them to bypass authorization.
 - When adding a new portal/page that depends on "the current user's org/partner,"
   use the `resolveViewer*` helpers (not the raw `getPrimaryOrgForUser` /
   `getPartnerForUser`) so it participates in act-as automatically.

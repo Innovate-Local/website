@@ -1,14 +1,14 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { isRealStaff, requireProfile, requireRole } from '@/lib/auth/session'
+import { requireProfile, requireRole } from '@/lib/auth/session'
 import {
   getOrgBalance,
-  isOrgAdmin,
   recordGrant,
   recordReclaim,
   recordSpend,
   recordTransfer,
+  viewerCanAdminOrg,
 } from '@/lib/platform/credits'
 
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -32,12 +32,10 @@ function revalidateCredits(orgId?: string) {
   if (orgId) revalidatePath(`/dashboard/organizations/${orgId}`)
 }
 
-// Allowed to move an org's credits: hub staff (real role — so it holds while a
-// developer is "acting as" the org), or an admin of that org.
+// Allowed to move an org's credits: effective hub staff, or an admin of that
+// org — resolved "act as"-aware so the persona is faithful (see viewerCanAdminOrg).
 async function canManageOrgCredits(orgId: string): Promise<boolean> {
-  if (await isRealStaff()) return true
-  const profile = await requireProfile()
-  return isOrgAdmin(profile.id, orgId)
+  return viewerCanAdminOrg(orgId)
 }
 
 // Staff-only: allocate credits to an organization (the source of the pool).
