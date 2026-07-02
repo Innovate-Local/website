@@ -10,7 +10,6 @@ import {
   projectInterests,
   apprenticeProfiles,
   organizations,
-  organizationMembers,
   profiles,
   hubs,
   type Profile,
@@ -18,6 +17,7 @@ import {
 } from '@/lib/db/schema'
 import { PROJECT_STATUSES, type ProjectStatus } from './project-status'
 import type { InterestStatus } from './interest-status'
+import { resolveViewerOrg } from './credits'
 
 // Re-exported so server code can keep importing these from one place.
 export { PROJECT_STATUSES, PROJECT_STATUS_LABEL } from './project-status'
@@ -32,8 +32,12 @@ export type ProjectListItem = {
 }
 
 // Which projects this user may see: staff → all; apprentice → assigned;
-// org_member → their org's. Returns undefined for "all" (no filter).
-function visibilityFilter(profile: Profile, userId: string): SQL | undefined {
+// org_member → the org they're viewing as. Returns undefined for "all" (no
+// filter). Async because the org_member case resolves the *viewer's* org via
+// resolveViewerOrg, so it honours a staff dev's "act as" org — keeping this list
+// consistent with the org dashboard (which resolves the same way). Without this,
+// acting-as an org lists projects the detail page then 404s on.
+async function visibilityFilter(profile: Profile, userId: string): Promise<SQL | undefined> {
   if (profile.role === 'hub_staff') return undefined
   if (profile.role === 'apprentice') {
     return inArray(
@@ -44,14 +48,9 @@ function visibilityFilter(profile: Profile, userId: string): SQL | undefined {
         .where(eq(projectAssignments.userId, userId)),
     )
   }
-  // org_member
-  return inArray(
-    projects.organizationId,
-    getDb()
-      .select({ id: organizationMembers.orgId })
-      .from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId)),
-  )
+  // org_member (honours "act as" org)
+  const org = await resolveViewerOrg(userId)
+  return org ? eq(projects.organizationId, org.orgId) : sql`false`
 }
 
 export async function listProjectsForUser(profile: Profile, userId: string): Promise<ProjectListItem[]> {
@@ -67,7 +66,7 @@ export async function listProjectsForUser(profile: Profile, userId: string): Pro
     .from(projects)
     .leftJoin(organizations, eq(organizations.id, projects.organizationId))
     .leftJoin(projectAssignments, eq(projectAssignments.projectId, projects.id))
-    .where(visibilityFilter(profile, userId))
+    .where(await visibilityFilter(profile, userId))
     .groupBy(projects.id, organizations.name)
     .orderBy(desc(projects.createdAt))
 }
@@ -121,19 +120,11 @@ export async function getProjectForUser(
     return a ? proj : null
   }
 
-  // org_member
+  // org_member — visible only if the project belongs to the org the viewer is
+  // acting as (resolveViewerOrg honours "act as"), matching the org dashboard.
   if (!proj.organizationId) return null
-  const [m] = await db
-    .select({ id: organizationMembers.id })
-    .from(organizationMembers)
-    .where(
-      and(
-        eq(organizationMembers.orgId, proj.organizationId),
-        eq(organizationMembers.userId, userId),
-      ),
-    )
-    .limit(1)
-  return m ? proj : null
+  const org = await resolveViewerOrg(userId)
+  return org && proj.organizationId === org.orgId ? proj : null
 }
 
 export type TeamMember = {
