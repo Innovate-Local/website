@@ -9,6 +9,7 @@
 // so any one can change (or be replaced by a manual form) without the others.
 
 import { aiChat, aiStructured, type ChatMessage } from '@/lib/ai/client'
+import type { AiCallMeta } from '@/lib/ai/usage'
 import {
   QUESTIONS_PER_TOPIC,
   competencyExtractionSchema,
@@ -27,6 +28,11 @@ import type { CompetencyResult, ComplexityResult, InterviewMessage, ProjectDraft
 export type { InterviewMessage } from './types'
 export type InterviewKind = 'competency' | 'complexity'
 
+// Attribution for AI cost tracking — the refs of the call's `feature` are set by
+// the agent; the caller (server action) supplies who/what it's for.
+export type UsageCtx = Omit<AiCallMeta, 'feature'>
+const meta = (feature: string, ctx?: UsageCtx): AiCallMeta => ({ feature, ...ctx })
+
 /**
  * Produce the interviewer's next reply. Flow control is deterministic: the
  * number of questions already asked (assistant turns, minus the greeting)
@@ -37,6 +43,7 @@ export type InterviewKind = 'competency' | 'complexity'
 export async function nextInterviewTurn(
   kind: InterviewKind,
   history: InterviewMessage[],
+  ctx?: UsageCtx,
 ): Promise<{ message: string; done: boolean }> {
   const topics = interviewTopics(kind)
   const total = topics.length * QUESTIONS_PER_TOPIC
@@ -64,7 +71,7 @@ export async function nextInterviewTurn(
     },
     ...history.map((m) => ({ role: m.role, content: m.content }) as ChatMessage),
   ]
-  const raw = await aiChat(messages, { maxTokens: 800 })
+  const raw = await aiChat(messages, { maxTokens: 800, meta: meta(`${kind}_interview`, ctx) })
   return { message: raw.trim(), done: false }
 }
 
@@ -72,14 +79,14 @@ function transcriptText(history: InterviewMessage[]): string {
   return history.map((m) => `${m.role === 'assistant' ? 'Interviewer' : 'Interviewee'}: ${m.content}`).join('\n\n')
 }
 
-export async function extractCompetency(history: InterviewMessage[]): Promise<CompetencyResult> {
+export async function extractCompetency(history: InterviewMessage[], ctx?: UsageCtx): Promise<CompetencyResult> {
   const raw = await aiStructured<RawCompetencySignals>(
     [
       { role: 'system', content: competencyExtractionSystemPrompt() },
       { role: 'user', content: `Interview transcript:\n\n${transcriptText(history)}` },
     ],
     competencyExtractionSchema,
-    { maxTokens: 4096 },
+    { maxTokens: 4096, meta: meta('competency_score', ctx) },
   )
   return scoreCompetency(raw)
 }
@@ -87,14 +94,14 @@ export async function extractCompetency(history: InterviewMessage[]): Promise<Co
 // Draft submittable project fields from a discovery transcript. Kept separate
 // from complexity scoring so the org sees a clean project while staff get the
 // internal PCS from the same conversation.
-export async function extractProjectDraft(history: InterviewMessage[]): Promise<ProjectDraft> {
+export async function extractProjectDraft(history: InterviewMessage[], ctx?: UsageCtx): Promise<ProjectDraft> {
   const raw = await aiStructured<ProjectDraft>(
     [
       { role: 'system', content: projectDraftSystemPrompt() },
       { role: 'user', content: `Discovery transcript:\n\n${transcriptText(history)}` },
     ],
     projectDraftSchema,
-    { maxTokens: 2048 },
+    { maxTokens: 2048, meta: meta('project_draft', ctx) },
   )
   return {
     title: raw.title?.trim() || 'Untitled project',
@@ -105,14 +112,14 @@ export async function extractProjectDraft(history: InterviewMessage[]): Promise<
   }
 }
 
-export async function extractComplexity(history: InterviewMessage[]): Promise<ComplexityResult> {
+export async function extractComplexity(history: InterviewMessage[], ctx?: UsageCtx): Promise<ComplexityResult> {
   const raw = await aiStructured<RawComplexitySignals>(
     [
       { role: 'system', content: complexityExtractionSystemPrompt() },
       { role: 'user', content: `Discovery transcript:\n\n${transcriptText(history)}` },
     ],
     complexityExtractionSchema,
-    { maxTokens: 4096 },
+    { maxTokens: 4096, meta: meta('complexity_score', ctx) },
   )
   return scoreComplexity(raw)
 }

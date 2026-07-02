@@ -47,7 +47,7 @@ export async function replyAssessment(
 
   const withUser: InterviewMessage[] = [...history, { role: 'user', content: userText }]
   try {
-    const { message, done } = await nextInterviewTurn('competency', withUser)
+    const { message, done } = await nextInterviewTurn('competency', withUser, { userId: me.id })
     await saveTranscript(assessmentId, me.id, [...withUser, { role: 'assistant', content: message }])
     return { ok: true, message, done }
   } catch (e) {
@@ -68,7 +68,7 @@ export async function finishAssessment(assessmentId: string): Promise<FinishResu
     return { ok: false, error: 'Answer at least one question before finishing.' }
   }
   try {
-    const result = await extractCompetency(transcript)
+    const result = await extractCompetency(transcript, { userId: me.id })
     await saveScore(assessmentId, me.id, result, transcript)
     revalidatePath('/dashboard/assessment')
     return { ok: true }

@@ -78,9 +78,14 @@ export async function replyDescribe(
   if (!disc) return { ok: false, error: 'Discovery not found.' }
   if (!aiConfigured()) return { ok: false, error: 'The discovery assistant isn’t available right now.' }
 
+  const me = await requireProfile()
   const withUser: InterviewMessage[] = [...history, { role: 'user', content: userText }]
   try {
-    const { message, done } = await nextInterviewTurn('complexity', withUser)
+    const { message, done } = await nextInterviewTurn('complexity', withUser, {
+      userId: me.id,
+      orgId: org.orgId,
+      requestId,
+    })
     await saveDiscoveryTranscript(disc.id, [...withUser, { role: 'assistant', content: message }])
     return { ok: true, message, done }
   } catch (e) {
@@ -102,8 +107,13 @@ export async function finishDescribe(requestId: string): Promise<SimpleResult> {
   if (transcript.filter((m) => m.role === 'user').length < 1) {
     return { ok: false, error: 'Answer at least one question before finishing.' }
   }
+  const me = await requireProfile()
+  const ctx = { userId: me.id, orgId: org.orgId, requestId }
   try {
-    const [complexity, draft] = await Promise.all([extractComplexity(transcript), extractProjectDraft(transcript)])
+    const [complexity, draft] = await Promise.all([
+      extractComplexity(transcript, ctx),
+      extractProjectDraft(transcript, ctx),
+    ])
     await saveDiscoveryScore(disc.id, complexity, transcript)
     await applyDraftToRequest(requestId, draft)
     revalidatePath(BASE)

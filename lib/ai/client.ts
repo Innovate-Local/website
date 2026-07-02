@@ -13,6 +13,8 @@
 //
 // Server-only. Never import from client components.
 
+import { recordAiUsage, type AiCallMeta, type ApiUsage } from './usage'
+
 export type ChatRole = 'system' | 'user' | 'assistant'
 export type ChatMessage = { role: ChatRole; content: string }
 
@@ -59,6 +61,9 @@ type ChatOpts = {
     json_schema: { name: string; strict: true; schema: JsonSchema }
   }
   signal?: AbortSignal
+  // When set, the call's token usage + computed cost is logged to
+  // ai_usage_events (attributed via the meta refs). Best-effort; never throws.
+  meta?: AiCallMeta
 }
 
 // The one place that actually talks to the provider. Deliberately omits
@@ -112,14 +117,22 @@ async function callChat(messages: ChatMessage[], opts: ChatOpts = {}): Promise<s
 
   const json = (await res.json()) as {
     choices?: { message?: { content?: string }; finish_reason?: string }[]
+    usage?: ApiUsage
   }
+  // Log usage + cost (best-effort) before we assert on content, so even a
+  // truncated/empty response is still accounted for.
+  if (opts.meta) await recordAiUsage(body.model as string, json.usage, opts.meta)
+
   const content = json.choices?.[0]?.message?.content
   if (!content) throw new AiError('Model returned an empty response.')
   return content
 }
 
 /** Free-form assistant turn (e.g. the next question in an interview). */
-export function aiChat(messages: ChatMessage[], opts?: { maxTokens?: number; signal?: AbortSignal }): Promise<string> {
+export function aiChat(
+  messages: ChatMessage[],
+  opts?: { maxTokens?: number; signal?: AbortSignal; meta?: AiCallMeta },
+): Promise<string> {
   return callChat(messages, opts)
 }
 
@@ -132,7 +145,7 @@ export function aiChat(messages: ChatMessage[], opts?: { maxTokens?: number; sig
 export async function aiStructured<T>(
   messages: ChatMessage[],
   schema: { name: string; schema: JsonSchema },
-  opts?: { maxTokens?: number; signal?: AbortSignal },
+  opts?: { maxTokens?: number; signal?: AbortSignal; meta?: AiCallMeta },
 ): Promise<T> {
   const raw = await callChat(messages, {
     ...opts,

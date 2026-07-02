@@ -45,14 +45,17 @@ export async function replyDiscovery(
   history: InterviewMessage[],
   userText: string,
 ): Promise<ReplyResult> {
-  await requireRole('hub_staff')
+  const me = await requireRole('hub_staff')
   const d = await getDiscoveryById(discoveryId)
   if (!d) return { ok: false, error: 'Discovery not found.' }
   if (!aiConfigured()) return { ok: false, error: 'The discovery assistant isn’t available right now.' }
 
   const withUser: InterviewMessage[] = [...history, { role: 'user', content: userText }]
   try {
-    const { message, done } = await nextInterviewTurn('complexity', withUser)
+    const { message, done } = await nextInterviewTurn('complexity', withUser, {
+      userId: me.id,
+      projectId: d.projectId,
+    })
     await saveDiscoveryTranscript(discoveryId, [...withUser, { role: 'assistant', content: message }])
     return { ok: true, message, done }
   } catch (e) {
@@ -61,7 +64,7 @@ export async function replyDiscovery(
 }
 
 export async function finishDiscovery(discoveryId: string, projectId: string): Promise<SimpleResult> {
-  await requireRole('hub_staff')
+  const me = await requireRole('hub_staff')
   const d = await getDiscoveryById(discoveryId)
   if (!d) return { ok: false, error: 'Discovery not found.' }
   if (!aiConfigured()) return { ok: false, error: 'The scoring assistant isn’t available right now.' }
@@ -71,7 +74,7 @@ export async function finishDiscovery(discoveryId: string, projectId: string): P
     return { ok: false, error: 'Answer at least one question before finishing.' }
   }
   try {
-    const result = await extractComplexity(transcript)
+    const result = await extractComplexity(transcript, { userId: me.id, projectId })
     await saveDiscoveryScore(discoveryId, result, transcript)
     revalidatePath(base(projectId))
     return { ok: true }

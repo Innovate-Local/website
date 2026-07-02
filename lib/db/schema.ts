@@ -8,7 +8,7 @@
 // ever drift — use it to verify, especially for `inquiries`, whose exact shape
 // lives only in the remote project today.)
 
-import { pgTable, uuid, text, jsonb, timestamp, integer, smallint, date, boolean, index } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, jsonb, timestamp, integer, bigint, smallint, date, boolean, index } from 'drizzle-orm/pg-core'
 
 // ---------------------------------------------------------------------------
 // inquiries — existing table. Public contact forms (join/partner/members) are
@@ -642,6 +642,33 @@ export const projectMatches = pgTable(
   }),
 )
 
+// ai_usage_events — per-LLM-call cost/token log for staff analytics. Mirrors
+// supabase/migrations/20260701150000_ai_usage.sql.
+export const aiUsageEvents = pgTable(
+  'ai_usage_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    feature: text('feature').notNull(),
+    model: text('model').notNull(),
+    promptTokens: integer('prompt_tokens').notNull().default(0),
+    completionTokens: integer('completion_tokens').notNull().default(0),
+    reasoningTokens: integer('reasoning_tokens').notNull().default(0),
+    totalTokens: integer('total_tokens').notNull().default(0),
+    costMicros: bigint('cost_micros', { mode: 'number' }).notNull().default(0),
+    userId: uuid('user_id'),
+    orgId: uuid('org_id').references(() => organizations.id, { onDelete: 'set null' }),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    requestId: uuid('request_id').references(() => projectRequests.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    createdIdx: index('ai_usage_created_idx').on(t.createdAt),
+    featureIdx: index('ai_usage_feature_idx').on(t.feature),
+    orgIdx: index('ai_usage_org_idx').on(t.orgId),
+    projectIdx: index('ai_usage_project_idx').on(t.projectId),
+  }),
+)
+
 // Inferred row types for use across the app.
 export type Inquiry = typeof inquiries.$inferSelect
 export type Student = typeof students.$inferSelect
@@ -686,3 +713,5 @@ export type ProjectDiscovery = typeof projectDiscoveries.$inferSelect
 export type NewProjectDiscovery = typeof projectDiscoveries.$inferInsert
 export type ProjectMatch = typeof projectMatches.$inferSelect
 export type NewProjectMatch = typeof projectMatches.$inferInsert
+export type AiUsageEvent = typeof aiUsageEvents.$inferSelect
+export type NewAiUsageEvent = typeof aiUsageEvents.$inferInsert
